@@ -5,6 +5,7 @@ import constants from "../config/constants.config.js";
 import { sendSuccess, sendError, sendServerError } from "../utils/response.utils.js";
 import { generateAuthToken } from "../utils/token.utils.js";
 import expressAsyncHandler from "express-async-handler";
+import logger from "../utils/logger.utils.js";
 
 const signup = expressAsyncHandler(async (req, res) => {
   let {
@@ -22,6 +23,8 @@ const signup = expressAsyncHandler(async (req, res) => {
   } = req.body;
 
   try {
+    // Normalize email
+    email = email?.trim().toLowerCase();
     // Validate required fields
     if (!phone || !email || !password) {
       return sendError(res, constants.VALIDATION_ERROR, "Phone, email, and password are required.");
@@ -75,9 +78,11 @@ const signup = expressAsyncHandler(async (req, res) => {
 });
 
 const login = expressAsyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
 
   try {
+    // Normalize email
+    email = email?.trim().toLowerCase();
     // Check if user exists
     const query = "SELECT * FROM users WHERE email = $1";
     const { rows } = await pool.query(query, [email]);
@@ -107,7 +112,103 @@ const login = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const superadminsignup = expressAsyncHandler(async (req, res) => {
+  try {
+    let { email, password } = req.body;
+
+    // Normalize email
+    email = email?.trim().toLowerCase();
+
+    // Validate input
+    if (!email || !password) {
+      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+    }
+
+    // Check if superadmin already exists
+    const checkQuery = "SELECT * FROM superadmin WHERE email = $1";
+    const { rows } = await pool.query(checkQuery, [email]);
+
+    if (rows.length > 0) {
+      return sendError(res, constants.CONFLICT, "Superadmin already exists with this email.");
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const superadmin_id = uuidv4();
+
+    // Insert superadmin into DB
+    const insertQuery = `
+      INSERT INTO superadmin (superadmin_id, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING superadmin_id, email, created_at
+    `;
+
+    const result = await pool.query(insertQuery, [superadmin_id, email, hashedPassword]);
+    const superadmin = result.rows[0];
+
+    // Optionally generate a token if needed
+    const token = await generateAuthToken({ superadmin_id: superadmin.superadmin_id });
+
+    return sendSuccess(res, constants.CREATED, "Superadmin created successfully", { superadmin, token });
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
+
+const superadminlogin = expressAsyncHandler(async (req, res) => {
+  try {
+    let { email, password } = req.body;
+
+    // Normalize email
+    email = email?.trim().toLowerCase();
+
+    // Validate input
+    if (!email || !password) {
+      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+    }
+
+    // Check if superadmin exists
+    const query = "SELECT * FROM superadmin WHERE email = $1";
+    const { rows } = await pool.query(query, [email]);
+
+    if (rows.length === 0) {
+      return sendError(res, constants.NOT_FOUND, "Superadmin account not found.");
+    }
+
+    const superadmin = rows[0];
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, superadmin.password);
+    if (!isMatch) {
+      return sendError(res, constants.UNAUTHORIZED, "Invalid credentials.");
+    }
+
+    // Generate token
+    const token = await generateAuthToken({ superadmin_id: superadmin.superadmin_id });
+
+    // Return minimal public info and token
+    return sendSuccess(res, constants.OK, "Login successful", {
+      superadmin: {
+        superadmin_id: superadmin.superadmin_id,
+        email: superadmin.email,
+        created_at: superadmin.created_at,
+      },
+      token,
+    });
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
+
+
 export default {
     signup,
-    login
+    login,
+    superadminsignup,
+    superadminlogin
+
 }

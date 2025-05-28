@@ -5,6 +5,10 @@ import { validateLogin, validateSignup } from "../validators/auth.validators.js"
 
 router.post("/login",validateLogin,authcontroller.login);
 
-router.post("/signup",validateSignup,authcontroller.signup)
+router.post("/signup",validateSignup,authcontroller.signup);
+
+router.post("/superadmin/signup",validateLogin,authcontroller.superadminsignup);
+
+router.post("/superadmin/login",validateLogin,authcontroller.superadminlogin);
 
 export default router;
