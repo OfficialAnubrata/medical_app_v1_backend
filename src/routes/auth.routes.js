@@ -11,4 +11,6 @@ router.post("/superadmin/signup",validateLogin,authcontroller.superadminsignup);
 
 router.post("/superadmin/login",validateLogin,authcontroller.superadminlogin);
 
+router.post("/medicalcentre/login",validateLogin,authcontroller.medicalCentreLogin);
+
 export default router;

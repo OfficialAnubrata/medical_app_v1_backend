@@ -204,11 +204,59 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
+  try {
+    let { email, password } = req.body;
+
+    // Normalize email
+    email = email?.trim().toLowerCase();
+
+    // Validate input
+    if (!email || !password) {
+      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+    }
+
+    // Check if medical centre exists
+    const query = "SELECT * FROM medical_centre WHERE email = $1";
+    const { rows } = await pool.query(query, [email]);
+
+    if (rows.length === 0) {
+      return sendError(res, constants.NOT_FOUND, "Medical centre not found.");
+    }
+
+    const centre = rows[0];
+
+    // Check if account is verified
+    if (!centre.is_verified) {
+      return sendError(res, constants.UNAUTHORIZED, "Your account is not verified yet.");
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, centre.password);
+    if (!isMatch) {
+      return sendError(res, constants.UNAUTHORIZED, "Invalid credentials.");
+    }
+
+    // Generate token
+    const token = await generateAuthToken({ medicalcentre_id: centre.medicalcentre_id });
+    delete centre.password;
+    // Return public info and token
+    return sendSuccess(res, constants.OK, "Login successful", {
+      centre,
+      token,
+    });
+
+  } catch (error) {
+    logger.info("Logging error for medical centre:", error.message);
+    return sendServerError(res, error);
+  }
+});
 
 export default {
     signup,
     login,
     superadminsignup,
-    superadminlogin
+    superadminlogin,
+    medicalCentreLogin
 
 }
