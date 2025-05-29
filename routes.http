@@ -1,0 +1,77 @@
+### User Signup
+POST http://localhost:5000/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "9876543210",
+  "email": "john.doe@example.com",
+  "password": "SecurePass123!",
+  "gender": "Male",
+  "dob": "1995-08-15",
+  "profilePic": "https://cdn-icons-png.flaticon.com/512/9131/9131529.png",
+  "location_latitude": 28.6139,
+  "location_longitude": 77.2090,
+  "isGoogleUser": false
+}
+
+### User Login
+POST http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "SecurePass123!"
+}
+
+### Superadmin Signup
+POST http://localhost:5000/api/v1/superadmin/signup
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "AdminStrongPass123"
+}
+
+### Superadmin Login
+POST http://localhost:5000/api/v1/superadmin/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "AdminStrongPass123"
+}
+
+### Medical Centre Login
+POST http://localhost:5000/api/v1/medicalcentre/login
+Content-Type: application/json
+
+{
+  "email": "clinic@example.com",
+  "password": "ClinicSecurePass123"
+}
+
+### Add Medical Centre
+POST http://localhost:5000/api/v1/medical/addmedicalcentre
+Content-Type: application/json
+
+{
+  "medicalcentre_name": "Green Valley Hospital",
+  "registration_number": "GVH123456",
+  "mobile_no": "9998887770",
+  "email": "greenvalley@example.com",
+  "address_line": "123 Health Street",
+  "area": "Sector 15",
+  "district": "Lucknow",
+  "state": "Uttar Pradesh",
+  "pincode": "226010"
+}
+
+### Verify Medical Centre
+PATCH http://localhost:5000/api/v1/medical/verifycentres/:medicalCentreId
+Content-Type: application/json
+
+{
+  "is_verified": true
+}
