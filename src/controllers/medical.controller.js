@@ -1,5 +1,6 @@
 import pool from "../config/db.config.js";
 import constants from "../config/constants.config.js";
+import bcrypt from "bcrypt";
 import {
   sendSuccess,
   sendError,
@@ -7,6 +8,8 @@ import {
 } from "../utils/response.utils.js";
 import expressAsyncHandler from "express-async-handler";
 import logger from "../utils/logger.utils.js";
+import cryptoRandomString from "crypto-random-string";
+import { sendEmail } from "../utils/sendEmail.utils.js";
 
 const addmedicalcentre = expressAsyncHandler(async (req, res) => {
   try {
@@ -80,7 +83,89 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
 });
 
 
+const verifyCentre = expressAsyncHandler(async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { is_verified } = req.body;
+    const { medicalCentreId } = req.params;
+
+    if (typeof is_verified !== "boolean") {
+      return sendError(res, constants.VALIDATION_ERROR, "'is_verified' must be a boolean.");
+    }
+
+    let plainPassword = null;
+    let hashedPassword = null;
+
+    if (is_verified) {
+      plainPassword = cryptoRandomString({ length: 8, type: "alphanumeric" });
+      hashedPassword = await bcrypt.hash(plainPassword, 10);
+    }
+
+    await client.query("BEGIN");
+
+    let result;
+
+    if (is_verified) {
+      const query = `
+        UPDATE medical_centre
+        SET is_verified = $1, password = $2
+        WHERE medicalcentre_id = $3
+        RETURNING *;
+      `;
+      const values = [true, hashedPassword, medicalCentreId];
+      result = await client.query(query, values);
+    } else {
+      const query = `
+        UPDATE medical_centre
+        SET is_verified = $1
+        WHERE medicalcentre_id = $2
+        RETURNING *;
+      `;
+      const values = [false, medicalCentreId];
+      result = await client.query(query, values);
+    }
+
+    if (result.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return sendError(res, constants.NOT_FOUND, "Medical centre not found.");
+    }
+
+    const medicalCentre = result.rows[0];
+
+    if (is_verified && medicalCentre.email) {
+      const subject = 'Your medical centre has been approved';
+      const html = `
+        <p>Your medical centre has been successfully verified.</p>
+        <p><strong>Temporary Password:</strong> ${plainPassword}</p>
+        <p>Please change it immediately after logging in for security reasons.</p>
+      `;
+
+      await sendEmail(medicalCentre.email, subject, html);
+    }
+
+    await client.query("COMMIT");
+
+    return sendSuccess(
+      res,
+      constants.OK,
+      is_verified
+        ? "Verification status updated and password emailed."
+        : "Verification status updated.",
+      medicalCentre
+    );
+  } catch (error) {
+    await client.query("ROLLBACK");
+    logger.info("verifyCentre error:", error.message);
+    return sendServerError(res, error);
+  } finally {
+    client.release();
+  }
+});
+
+
 
 export default {
   addmedicalcentre,
+  verifyCentre
 };

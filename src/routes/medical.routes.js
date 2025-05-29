@@ -6,5 +6,5 @@ const router = express.Router();
 
 
 router.post('/addmedicalcentre',superadminChecker,validateMedicalCentreInput,medicalcontroller.addmedicalcentre )
-
+router.patch('/verifycentres/:medicalCentreId',superadminChecker,medicalcontroller.verifyCentre)
 export default router;

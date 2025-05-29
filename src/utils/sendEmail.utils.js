@@ -1,6 +1,5 @@
 import { createTransport } from "nodemailer";
 import variable from "../config/env.config.js";
-require("dotenv").config();
 export async function sendEmail(email, subject, html) {
   const transporter = createTransport({
     host: "smtp.gmail.com",
