@@ -42,7 +42,13 @@ app.use(morgan("dev", {
 
 app.use("/api/v1",mainrouter)
 app.get('/',(req, res)=>{
-  return sendSuccess(res, constants.OK, "medical app working fine.")
+    const healthInfo = {
+    appName: 'Medical API',
+    status: 'running',
+    uptime: process.uptime().toFixed(2) + ' seconds',
+    environment: process.env.NODE_ENV || 'development'
+  };
+  return sendSuccess(res, constants.OK, "medical app working fine.",healthInfo)
 })
 app.get('/logs', (req, res) => {
   const logPath = path.join('logs' ,'app.log');
