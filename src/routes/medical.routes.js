@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.post('/addmedicalcentre',superadminChecker,validateMedicalCentreInput,medicalcontroller.addmedicalcentre )
-router.patch('/verifycentres/:medicalCentreId',superadminChecker,medicalcontroller.verifyCentre)
-router.get('/getallmedicalcentres',superadminChecker,medicalcontroller.getAllMedicalCentres)
+router.post('/verifycentres/:medicalCentreId',superadminChecker,medicalcontroller.verifyCentre)
+router.post('/getallmedicalcentres',superadminChecker,medicalcontroller.getAllMedicalCentres)
 router.post('/getnearestmedicalcentres',userChecker,medicalcontroller.getNearestMedicalCentres)
 export default router;

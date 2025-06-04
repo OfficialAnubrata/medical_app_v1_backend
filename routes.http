@@ -70,7 +70,7 @@ Content-Type: application/json
 }
 
 ### Verify Medical Centre
-PATCH http://localhost:3000/api/v1/medical/verifycentres/:medicalCentreId
+POST http://localhost:3000/api/v1/medical/verifycentres/:medicalCentreId
 Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
@@ -79,7 +79,7 @@ Content-Type: application/json
 }
 
 ### Fetch all medical centres by superadmin (with token)
-GET http://localhost:3000/api/v1/medical/getallmedicalcentres?page=1&limit=10
+POST http://localhost:3000/api/v1/medical/getallmedicalcentres?page=1&limit=10
 Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
