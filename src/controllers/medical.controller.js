@@ -198,15 +198,20 @@ const getAllMedicalCentres = expressAsyncHandler(async (req, res) => {
 
 const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
   try {
-    const { latitude, longitude, radius = 10 } = req.body; // default radius 10 km
+    const { latitude, longitude, radius = 10 } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
     if (!latitude || !longitude) {
       return sendError(res, constants.VALIDATION_ERROR, 'Latitude and longitude are required.');
     }
 
-    // Fetch all medical centres with coordinates
+    if (page < 1 || limit < 1) {
+      return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
+    }
+
     const result = await pool.query(`
-      SELECT * FROM medical_centre 
+      SELECT * FROM medical_centre
       WHERE mclatitude IS NOT NULL AND mclongitude IS NOT NULL
     `);
 
@@ -216,19 +221,30 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
         return { ...centre, distance };
       })
       .filter((centre) => centre.distance <= radius)
-      .sort((a, b) => a.distance - b.distance); // closest first
+      .sort((a, b) => a.distance - b.distance);
+
+    const startIndex = (page - 1) * limit;
+    const paginatedData = nearest.slice(startIndex, startIndex + limit);
+
+    // Generate random number between 1 and 4
+    const randomValue = Math.floor(Math.random() * 4) + 1;
 
     return sendSuccess(res, constants.OK, "Nearest medical centres fetched successfully", {
-      data: nearest,
-      count: nearest.length,
+      data: paginatedData,
+      totalCount: nearest.length,
+      totalPages: Math.ceil(nearest.length / limit),
+      currentPage: page,
       radiusKm: radius,
+      randomValue,
     });
 
   } catch (error) {
-    logger.error(error.message);
+    logger.info(error.message);
     return sendServerError(res, error);
   }
 });
+
+
 
 export default {
   addmedicalcentre,
