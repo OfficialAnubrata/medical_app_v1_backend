@@ -26,7 +26,7 @@ Content-Type: application/json
 }
 
 ### Superadmin Signup
-POST http://localhost:3000/api/v1/superadmin/signup
+POST http://localhost:3000/api/v1/auth/superadmin/signup
 Content-Type: application/json
 
 {
@@ -35,7 +35,7 @@ Content-Type: application/json
 }
 
 ### Superadmin Login
-POST http://localhost:3000/api/v1/superadmin/login
+POST http://localhost:3000/api/v1/auth/superadmin/login
 Content-Type: application/json
 
 {
@@ -44,7 +44,7 @@ Content-Type: application/json
 }
 
 ### Medical Centre Login
-POST http://localhost:3000/api/v1/medicalcentre/login
+POST http://localhost:3000/api/v1/auth/medicalcentre/login
 Content-Type: application/json
 
 {

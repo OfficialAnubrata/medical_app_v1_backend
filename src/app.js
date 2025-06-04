@@ -9,6 +9,7 @@ import cors from "cors";
 import morgan from "morgan";
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from "./utils/logger.utils.js"
 import { sendSuccess } from "./utils/response.utils.js";
 import constants from "./config/constants.config.js";
@@ -50,6 +51,15 @@ app.get('/',(req, res)=>{
   };
   return sendSuccess(res, constants.OK, "medical app working fine.",healthInfo)
 })
+
+// Serve static HTTP file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.get('/docs', (req, res) => {
+  const filePath = path.join(__dirname,'..', 'routes.http');
+  res.sendFile(filePath);
+});
 app.get('/logs', (req, res) => {
   const logPath = path.join('logs' ,'app.log');
 
