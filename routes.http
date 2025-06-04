@@ -1,5 +1,5 @@
 ### User Signup
-POST http://localhost:5000/api/v1/auth/signup
+POST http://localhost:3000/api/v1/auth/signup
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 
 ### User Login
-POST http://localhost:5000/api/v1/auth/login
+POST http://localhost:3000/api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -26,7 +26,7 @@ Content-Type: application/json
 }
 
 ### Superadmin Signup
-POST http://localhost:5000/api/v1/superadmin/signup
+POST http://localhost:3000/api/v1/superadmin/signup
 Content-Type: application/json
 
 {
@@ -35,7 +35,7 @@ Content-Type: application/json
 }
 
 ### Superadmin Login
-POST http://localhost:5000/api/v1/superadmin/login
+POST http://localhost:3000/api/v1/superadmin/login
 Content-Type: application/json
 
 {
@@ -44,7 +44,7 @@ Content-Type: application/json
 }
 
 ### Medical Centre Login
-POST http://localhost:5000/api/v1/medicalcentre/login
+POST http://localhost:3000/api/v1/medicalcentre/login
 Content-Type: application/json
 
 {
@@ -53,7 +53,8 @@ Content-Type: application/json
 }
 
 ### Add Medical Centre
-POST http://localhost:5000/api/v1/medical/addmedicalcentre
+POST http://localhost:3000/api/v1/medical/addmedicalcentre
+Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
 {
@@ -69,9 +70,14 @@ Content-Type: application/json
 }
 
 ### Verify Medical Centre
-PATCH http://localhost:5000/api/v1/medical/verifycentres/:medicalCentreId
+PATCH http://localhost:3000/api/v1/medical/verifycentres/:medicalCentreId
+Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
 {
   "is_verified": true
 }
+### Fetch all medical centres by superadmin (with token)
+GET http://localhost:3000/api/v1/medical/getallmedicalcentres?page=1&limit=10
+Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json

@@ -163,9 +163,40 @@ const verifyCentre = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getAllMedicalCentres = expressAsyncHandler(async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+    const offset = (page - 1) * limit;
 
+    // Count total medical centres
+    const countResult = await pool.query(`SELECT COUNT(*) FROM medical_centre`);
+    const totalItems = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // Fetch paginated data
+    const result = await pool.query(
+      `SELECT * FROM medical_centre ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    return sendSuccess(res, constants.OK, "Medical centres fetched successfully", {
+      data: result.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
 
 export default {
   addmedicalcentre,
-  verifyCentre
+  verifyCentre,
+  getAllMedicalCentres
 };
