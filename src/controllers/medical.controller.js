@@ -244,11 +244,40 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const deleteMedicalCentre = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return sendError(res, constants.VALIDATION_ERROR, "Medical centre ID is required.");
+    }
+
+    // Attempt delete and get deleted row
+    const result = await pool.query(
+      `DELETE FROM medical_centre WHERE medicalcentre_id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return sendError(res, constants.NOT_FOUND, "Medical centre not found.");
+    }
+
+    return sendSuccess(res, constants.OK, "Medical centre deleted successfully.", {
+      deleted: result.rows[0],
+    });
+
+  } catch (error) {
+    logger.error(`Delete Medical Centre Error: ${error.message}`);
+    return sendServerError(res, error);
+  }
+});
+
 
 
 export default {
   addmedicalcentre,
   verifyCentre,
   getAllMedicalCentres,
-  getNearestMedicalCentres
+  getNearestMedicalCentres,
+  deleteMedicalCentre
 };

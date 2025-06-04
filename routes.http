@@ -93,3 +93,7 @@ Content-Type: application/json
   "longitude": 88.4343624,
   "radius": 100
 }
+
+### delete medical centre
+POST http://localhost:3000/api/v1/medical/deletemedicalcentre/:id
+Authorization: Bearer <your_superadmin_token>

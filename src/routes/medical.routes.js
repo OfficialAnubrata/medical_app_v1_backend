@@ -9,4 +9,5 @@ router.post('/addmedicalcentre',superadminChecker,validateMedicalCentreInput,med
 router.post('/verifycentres/:medicalCentreId',superadminChecker,medicalcontroller.verifyCentre)
 router.post('/getallmedicalcentres',superadminChecker,medicalcontroller.getAllMedicalCentres)
 router.post('/getnearestmedicalcentres',userChecker,medicalcontroller.getNearestMedicalCentres)
+router.post('/deletemedicalcentre/:id',superadminChecker,medicalcontroller.deleteMedicalCentre)
 export default router;
