@@ -58,7 +58,12 @@ const __dirname = path.dirname(__filename);
 
 app.get('/docs', (req, res) => {
   const filePath = path.join(__dirname,'..', 'routes.http');
-  res.sendFile(filePath);
+   fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      return res.status(500).send("Couldn't read routes.http file");
+    }
+    res.type('text/plain').send(data);
+  });
 });
 app.get('/logs', (req, res) => {
   const logPath = path.join('logs' ,'app.log');
