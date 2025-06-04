@@ -10,6 +10,7 @@ import expressAsyncHandler from "express-async-handler";
 import logger from "../utils/logger.utils.js";
 import cryptoRandomString from "crypto-random-string";
 import { sendEmail } from "../utils/sendEmail.utils.js";
+import { haversine } from "../utils/calculatedistance.utils.js";
 
 const addmedicalcentre = expressAsyncHandler(async (req, res) => {
   try {
@@ -195,8 +196,43 @@ const getAllMedicalCentres = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 10 } = req.body; // default radius 10 km
+
+    if (!latitude || !longitude) {
+      return sendError(res, constants.VALIDATION_ERROR, 'Latitude and longitude are required.');
+    }
+
+    // Fetch all medical centres with coordinates
+    const result = await pool.query(`
+      SELECT * FROM medical_centre 
+      WHERE mclatitude IS NOT NULL AND mclongitude IS NOT NULL
+    `);
+
+    const nearest = result.rows
+      .map((centre) => {
+        const distance = haversine(latitude, longitude, centre.mclatitude, centre.mclongitude);
+        return { ...centre, distance };
+      })
+      .filter((centre) => centre.distance <= radius)
+      .sort((a, b) => a.distance - b.distance); // closest first
+
+    return sendSuccess(res, constants.OK, "Nearest medical centres fetched successfully", {
+      data: nearest,
+      count: nearest.length,
+      radiusKm: radius,
+    });
+
+  } catch (error) {
+    logger.error(error.message);
+    return sendServerError(res, error);
+  }
+});
+
 export default {
   addmedicalcentre,
   verifyCentre,
-  getAllMedicalCentres
+  getAllMedicalCentres,
+  getNearestMedicalCentres
 };

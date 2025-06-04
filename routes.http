@@ -77,7 +77,19 @@ Content-Type: application/json
 {
   "is_verified": true
 }
+
 ### Fetch all medical centres by superadmin (with token)
 GET http://localhost:3000/api/v1/medical/getallmedicalcentres?page=1&limit=10
 Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
+
+### Get Nearest Medical Centres (within 100 km)
+POST http://localhost:3000/api/v1/medical/getnearestmedicalcentres
+Authorization: Bearer <your_user_token>
+Content-Type: application/json
+
+{
+  "latitude": 22.5731358,
+  "longitude": 88.4343624,
+  "radius": 100
+}
