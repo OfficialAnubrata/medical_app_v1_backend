@@ -11,3 +11,17 @@ export const testCatalogSchema = Joi.object({
     'any.required': 'At least one component is required',
   }),
 });
+
+
+export const medicalTestSchema = Joi.object({
+  test_id: Joi.string().trim().required().messages({
+    'any.required': 'Test ID is required',
+  }),
+  medicalcentre_id: Joi.string().trim().required().messages({
+    'any.required': 'Medical centre ID is required',
+  }),
+  price: Joi.number().positive().required().messages({
+    'any.required': 'Price is required',
+    'number.positive': 'Price must be a positive number',
+  }),
+});

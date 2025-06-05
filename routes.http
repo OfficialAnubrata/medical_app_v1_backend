@@ -107,3 +107,13 @@ Content-Type: application/json
   "type_of_test": "Imaging",
   "components": ["Liver", "Gallbladder", "Pancreas", "Kidneys", "Spleen"]
 }
+
+### Add Test to Centre
+POST http://localhost:3000/api/v1/medical/tests/assign
+Content-Type: application/json
+
+{
+  "test_id": "2b2b13aa-c85e-433e-bd3b-1171f33a538d",
+  "medicalcentre_id": "MC-1748503434482",
+  "price": 450
+}

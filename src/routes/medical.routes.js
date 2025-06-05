@@ -12,4 +12,5 @@ router.post('/getallmedicalcentres',superadminChecker,medicalcontroller.getAllMe
 router.post('/getnearestmedicalcentres',userChecker,medicalcontroller.getNearestMedicalCentres)
 router.post('/deletemedicalcentre/:id',superadminChecker,medicalcontroller.deleteMedicalCentre)
 router.post('/addtesttocatalogue',superadminChecker,testController.addTestCatalog)
+router.post('/tests/assign',superadminChecker,testController.addTestToMedicalCentre)
 export default router;
