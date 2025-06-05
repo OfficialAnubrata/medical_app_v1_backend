@@ -100,7 +100,83 @@ const addTestToMedicalCentre = expressAsyncHandler(async (req, res) => {
     result_TEST.rows[0]
   );
 });
+
+const getTestsForMedicalCentre = expressAsyncHandler(async (req, res) => {
+  const { medicalcentre_id } = req.params;
+  let { page = 1, limit = 10, type_of_test, search } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  if (!medicalcentre_id) {
+    return sendError(res, constants.VALIDATION_ERROR, "Medical centre ID is required.");
+  }
+  if (page < 1 || limit < 1) {
+    return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
+  }
+
+  try {
+    let baseQuery = `
+      FROM medical_test AS mt
+      INNER JOIN test_catalog AS tc ON mt.test_id = tc.test_id
+      WHERE mt.medicalcentre_id = $1
+    `;
+
+    const params = [medicalcentre_id];
+    let paramIndex = 2;
+
+    if (type_of_test) {
+      baseQuery += ` AND tc.type_of_test = $${paramIndex}`;
+      params.push(type_of_test);
+      paramIndex++;
+    }
+
+    if (search) {
+      baseQuery += ` AND LOWER(tc.test_name) LIKE $${paramIndex}`;
+      params.push(`%${search.toLowerCase()}%`);
+      paramIndex++;
+    }
+
+    // Get total count for pagination
+    const countResult = await pool.query(`SELECT COUNT(*) ${baseQuery}`, params);
+    const totalItems = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(totalItems / limit);
+    const offset = (page - 1) * limit;
+
+    // Fetch paginated results
+    const dataQuery = `
+      SELECT 
+        mt.medical_test_id,
+        tc.test_id,
+        tc.test_name,
+        tc.type_of_test,
+        tc.components,
+        mt.price,
+        mt.created_at
+      ${baseQuery}
+      ORDER BY mt.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    params.push(limit, offset);
+
+    const { rows } = await pool.query(dataQuery, params);
+
+    return sendSuccess(res, constants.OK, "Tests fetched successfully.", {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      tests: rows,
+    });
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
+
 export default {
   addTestCatalog,
-  addTestToMedicalCentre
+  addTestToMedicalCentre,
+  getTestsForMedicalCentre
 };

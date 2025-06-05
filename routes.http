@@ -83,7 +83,7 @@ POST http://localhost:3000/api/v1/medical/getallmedicalcentres?page=1&limit=10
 Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
-### Get Nearest Medical Centres (within 100 km)
+### Get Nearest Medical Centres (within 100 km) USER
 POST http://localhost:3000/api/v1/medical/getnearestmedicalcentres?page=1&limit=10
 Authorization: Bearer <your_user_token>
 Content-Type: application/json
@@ -100,6 +100,7 @@ Authorization: Bearer <your_superadmin_token>
 
 ### ADD test to catalouge
 POST http://localhost:3000/api/v1/medical/addtesttocatalogue
+Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
 {
@@ -110,6 +111,7 @@ Content-Type: application/json
 
 ### Add Test to Centre
 POST http://localhost:3000/api/v1/medical/tests/assign
+Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
 {
@@ -117,3 +119,11 @@ Content-Type: application/json
   "medicalcentre_id": "MC-1748503434482",
   "price": 450
 }
+
+
+### Get Tests for Medical Centre (with pagination, filter & search) USER
+POST http://localhost:3000/api/v1/medical/tests/centre/:medicalcentre_id?page=1&limit=10&type_of_test=Blood&search=liver
+Authorization: Bearer <your_user_token>
+Content-Type: application/json
+
+# Replace {{medicalcentre_id}} with actual medical centre id
