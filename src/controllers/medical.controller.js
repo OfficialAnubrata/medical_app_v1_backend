@@ -272,12 +272,50 @@ const deleteMedicalCentre = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getMedicalCentreSummary = expressAsyncHandler(async (req, res) => {
+  try {
+    const { medicalcentre_id } = req.params;
 
+    if (!medicalcentre_id) {
+      return sendError(res, constants.VALIDATION_ERROR, "Medical centre ID is required.");
+    }
+
+    const query = `
+      SELECT 
+        mc.medicalcentre_name,
+        mc.address_line,
+        mc.area,
+        mc.district,
+        mc.state,
+        mc.pincode,
+        COUNT(DISTINCT mt.test_id) AS total_tests,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT tc.type_of_test), NULL) AS types_of_tests
+      FROM medical_centre mc
+      LEFT JOIN medical_test mt ON mc.medicalcentre_id = mt.medicalcentre_id
+      LEFT JOIN test_catalog tc ON mt.test_id = tc.test_id
+      WHERE mc.medicalcentre_id = $1
+      GROUP BY mc.medicalcentre_id
+    `;
+
+    const result = await pool.query(query, [medicalcentre_id]);
+
+    if (result.rowCount === 0) {
+      return sendError(res, constants.NOT_FOUND, "Medical centre not found.");
+    }
+
+    return sendSuccess(res, constants.OK, "Medical centre summary fetched successfully.", result.rows[0]);
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendError(res, constants.SERVER_ERROR, "Something went wrong.");
+  }
+});
 
 export default {
   addmedicalcentre,
   verifyCentre,
   getAllMedicalCentres,
   getNearestMedicalCentres,
-  deleteMedicalCentre
+  deleteMedicalCentre,
+  getMedicalCentreSummary
 };

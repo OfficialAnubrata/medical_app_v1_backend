@@ -51,4 +51,10 @@ router.post(
   userChecker,
   testController.getTestsForMedicalCentre
 );
+
+router.post(
+  "/details/:medicalcentre_id",
+  userChecker,
+  medicalcontroller.getMedicalCentreSummary
+);
 export default router;

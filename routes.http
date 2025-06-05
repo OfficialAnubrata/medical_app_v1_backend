@@ -127,3 +127,9 @@ Authorization: Bearer <your_user_token>
 Content-Type: application/json
 
 # Replace {{medicalcentre_id}} with actual medical centre id
+
+
+### Get Medical Centre Details with Test Summary
+POST http://localhost:3000/api/v1/medical/details/:medicalcentre_id
+Authorization: Bearer <your_user_token>
+
