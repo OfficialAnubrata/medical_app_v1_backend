@@ -97,3 +97,13 @@ Content-Type: application/json
 ### delete medical centre
 POST http://localhost:3000/api/v1/medical/deletemedicalcentre/:id
 Authorization: Bearer <your_superadmin_token>
+
+### ADD test to catalouge
+POST http://localhost:3000/api/v1/medical/addtesttocatalogue
+Content-Type: application/json
+
+{
+  "test_name": "Ultrasound Abdomen",
+  "type_of_test": "Imaging",
+  "components": ["Liver", "Gallbladder", "Pancreas", "Kidneys", "Spleen"]
+}
