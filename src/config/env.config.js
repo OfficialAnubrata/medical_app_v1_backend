@@ -7,7 +7,8 @@ const variable = {
     jwt_secret: process.env.JWT_SECRET,
     expery_time: process.env.JWT_EXPIRY_TIME,
     gmail: process.env.NODEMAILER_GMAIL,
-    gmail_password: process.env.NODEMAILER_GMAIL_PASS
+    gmail_password: process.env.NODEMAILER_GMAIL_PASS,
+    refresh_token: process.env.REFESH_TOKEN_SECRET
 };
 
 export default variable;

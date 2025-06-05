@@ -25,6 +25,10 @@ Content-Type: application/json
   "password": "SecurePass123!"
 }
 
+### Refresh Access Token
+GET http://localhost:3000/api/v1/auth/refresh
+# No body needed; refreshToken is sent automatically in the HttpOnly cookie
+
 ### Superadmin Signup
 POST http://localhost:3000/api/v1/auth/superadmin/signup
 Content-Type: application/json

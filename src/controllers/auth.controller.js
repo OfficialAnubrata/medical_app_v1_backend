@@ -2,8 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
 import pool from "../config/db.config.js";
 import constants from "../config/constants.config.js";
-import { sendSuccess, sendError, sendServerError } from "../utils/response.utils.js";
-import { generateAuthToken } from "../utils/token.utils.js";
+import {
+  sendSuccess,
+  sendError,
+  sendServerError,
+} from "../utils/response.utils.js";
+import { generateAuthToken, refresh_token } from "../utils/token.utils.js";
 import expressAsyncHandler from "express-async-handler";
 import logger from "../utils/logger.utils.js";
 
@@ -14,7 +18,7 @@ const signup = expressAsyncHandler(async (req, res) => {
     phone,
     email,
     password,
-    gender = 'Other',
+    gender = "Other",
     dob = null,
     profilePic = "https://cdn-icons-png.flaticon.com/512/9131/9131529.png",
     location_latitude = null,
@@ -27,7 +31,11 @@ const signup = expressAsyncHandler(async (req, res) => {
     email = email?.trim().toLowerCase();
     // Validate required fields
     if (!phone || !email || !password) {
-      return sendError(res, constants.VALIDATION_ERROR, "Phone, email, and password are required.");
+      return sendError(
+        res,
+        constants.VALIDATION_ERROR,
+        "Phone, email, and password are required."
+      );
     }
 
     // Check if user already exists
@@ -35,7 +43,11 @@ const signup = expressAsyncHandler(async (req, res) => {
     const { rows } = await pool.query(checkQuery, [email, phone]);
 
     if (rows.length > 0) {
-      return sendError(res, constants.CONFLICT, "User already exists with given email or phone");
+      return sendError(
+        res,
+        constants.CONFLICT,
+        "User already exists with given email or phone"
+      );
     }
 
     // Hash the password
@@ -69,10 +81,19 @@ const signup = expressAsyncHandler(async (req, res) => {
     const result = await pool.query(insertQuery, values);
     const user = result.rows[0];
     const token = await generateAuthToken({ user_id });
-
-    return sendSuccess(res, constants.CREATED, "User created successfully", { user, token });
+    const refreshtoken = await refresh_token({ user_id });
+    res.cookie("refreshToken", refreshtoken, {
+      httpOnly: true,
+      secure: true, // Set to true in production with HTTPS
+      sameSite: "Strict",
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 30 days
+    });
+    return sendSuccess(res, constants.CREATED, "User created successfully", {
+      user,
+      token,
+    });
   } catch (error) {
-    logger.info(error.message)
+    logger.info(error.message);
     return sendServerError(res, error);
   }
 });
@@ -88,7 +109,11 @@ const login = expressAsyncHandler(async (req, res) => {
     const { rows } = await pool.query(query, [email]);
 
     if (rows.length === 0) {
-      return sendError(res, constants.UNAUTHORIZED, "Invalid email or password");
+      return sendError(
+        res,
+        constants.UNAUTHORIZED,
+        "Invalid email or password"
+      );
     }
 
     const user = rows[0];
@@ -96,18 +121,28 @@ const login = expressAsyncHandler(async (req, res) => {
     // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return sendError(res, constants.UNAUTHORIZED, "Invalid email or password");
+      return sendError(
+        res,
+        constants.UNAUTHORIZED,
+        "Invalid email or password"
+      );
     }
 
     // Generate token
-    const token = await generateAuthToken({ user_id:user.user_id });
-
+    const token = await generateAuthToken({ user_id: user.user_id });
+    const refreshtoken = await refresh_token({ user_id: user.user_id });
     // Remove password from response data
     delete user.password;
-
+    // Set refreshToken in HttpOnly cookie
+    res.cookie("refreshToken", refreshtoken, {
+      httpOnly: true,
+      secure: true, // Set to true in production with HTTPS
+      sameSite: "Strict",
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 30 days
+    });
     return sendSuccess(res, constants.OK, "Login successful", { user, token });
   } catch (error) {
-    logger.info(error.message)
+    logger.info(error.message);
     return sendServerError(res, error);
   }
 });
@@ -121,7 +156,11 @@ const superadminsignup = expressAsyncHandler(async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+      return sendError(
+        res,
+        constants.VALIDATION_ERROR,
+        "Email and password are required."
+      );
     }
 
     // Check if superadmin already exists
@@ -129,7 +168,11 @@ const superadminsignup = expressAsyncHandler(async (req, res) => {
     const { rows } = await pool.query(checkQuery, [email]);
 
     if (rows.length > 0) {
-      return sendError(res, constants.CONFLICT, "Superadmin already exists with this email.");
+      return sendError(
+        res,
+        constants.CONFLICT,
+        "Superadmin already exists with this email."
+      );
     }
 
     // Hash password
@@ -143,14 +186,24 @@ const superadminsignup = expressAsyncHandler(async (req, res) => {
       RETURNING superadmin_id, email, created_at
     `;
 
-    const result = await pool.query(insertQuery, [superadmin_id, email, hashedPassword]);
+    const result = await pool.query(insertQuery, [
+      superadmin_id,
+      email,
+      hashedPassword,
+    ]);
     const superadmin = result.rows[0];
 
     // Optionally generate a token if needed
-    const token = await generateAuthToken({ superadmin_id: superadmin.superadmin_id });
+    const token = await generateAuthToken({
+      superadmin_id: superadmin.superadmin_id,
+    });
 
-    return sendSuccess(res, constants.CREATED, "Superadmin created successfully", { superadmin, token });
-
+    return sendSuccess(
+      res,
+      constants.CREATED,
+      "Superadmin created successfully",
+      { superadmin, token }
+    );
   } catch (error) {
     logger.info(error.message);
     return sendServerError(res, error);
@@ -166,7 +219,11 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+      return sendError(
+        res,
+        constants.VALIDATION_ERROR,
+        "Email and password are required."
+      );
     }
 
     // Check if superadmin exists
@@ -174,7 +231,11 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
     const { rows } = await pool.query(query, [email]);
 
     if (rows.length === 0) {
-      return sendError(res, constants.NOT_FOUND, "Superadmin account not found.");
+      return sendError(
+        res,
+        constants.NOT_FOUND,
+        "Superadmin account not found."
+      );
     }
 
     const superadmin = rows[0];
@@ -186,7 +247,9 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
     }
 
     // Generate token
-    const token = await generateAuthToken({ superadmin_id: superadmin.superadmin_id });
+    const token = await generateAuthToken({
+      superadmin_id: superadmin.superadmin_id,
+    });
 
     // Return minimal public info and token
     return sendSuccess(res, constants.OK, "Login successful", {
@@ -197,7 +260,6 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
       },
       token,
     });
-
   } catch (error) {
     logger.info(error.message);
     return sendServerError(res, error);
@@ -213,7 +275,11 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return sendError(res, constants.VALIDATION_ERROR, "Email and password are required.");
+      return sendError(
+        res,
+        constants.VALIDATION_ERROR,
+        "Email and password are required."
+      );
     }
 
     // Check if medical centre exists
@@ -228,7 +294,11 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
 
     // Check if account is verified
     if (!centre.is_verified) {
-      return sendError(res, constants.UNAUTHORIZED, "Your account is not verified yet.");
+      return sendError(
+        res,
+        constants.UNAUTHORIZED,
+        "Your account is not verified yet."
+      );
     }
 
     // Compare password
@@ -238,14 +308,15 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
     }
 
     // Generate token
-    const token = await generateAuthToken({ medicalcentre_id: centre.medicalcentre_id });
+    const token = await generateAuthToken({
+      medicalcentre_id: centre.medicalcentre_id,
+    });
     delete centre.password;
     // Return public info and token
     return sendSuccess(res, constants.OK, "Login successful", {
       centre,
       token,
     });
-
   } catch (error) {
     logger.info("Logging error for medical centre:", error.message);
     return sendServerError(res, error);
@@ -253,10 +324,9 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
 });
 
 export default {
-    signup,
-    login,
-    superadminsignup,
-    superadminlogin,
-    medicalCentreLogin
-
-}
+  signup,
+  login,
+  superadminsignup,
+  superadminlogin,
+  medicalCentreLogin,
+};

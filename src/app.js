@@ -13,7 +13,8 @@ import { fileURLToPath } from 'url';
 import logger from "./utils/logger.utils.js"
 import { sendSuccess } from "./utils/response.utils.js";
 import constants from "./config/constants.config.js";
-import mainrouter from "./routes/index.routes.js"
+import mainrouter from "./routes/index.routes.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -27,12 +28,13 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE","OPTIONS"],
   allowedHeaders: ["Authorization", "Content-Type"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev", {

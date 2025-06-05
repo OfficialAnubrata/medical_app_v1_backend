@@ -12,3 +12,8 @@ export async function generateAuthToken(payload) {
     expiresIn: variable.expery_time,
   });
 }
+export async function refresh_token(payload) {
+  return sign(payload, variable.refresh_token, {
+    expiresIn: "365D",
+  })
+}
