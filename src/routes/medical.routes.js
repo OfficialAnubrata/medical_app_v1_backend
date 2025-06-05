@@ -45,8 +45,10 @@ router.post(
   testController.addTestToMedicalCentre
 );
 
-
-
 // user tests route
-router.post("/tests/centre/:medicalcentre_id", userChecker, testController.getTestsForMedicalCentre);
+router.post(
+  "/tests/centre/:medicalcentre_id",
+  userChecker,
+  testController.getTestsForMedicalCentre
+);
 export default router;
