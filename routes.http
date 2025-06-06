@@ -171,3 +171,9 @@ Content-Type: application/json
 ### Delete a test catalog
 POST http://localhost:3000/api/v1/medical/delete_tests_catalouge/:test_id
 Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json
+
+### Delete test from centre
+POST http://localhost:3000/api/v1/medical/medical-centre/:medicalcentre_id/deletetest/:test_id
+Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json

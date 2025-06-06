@@ -90,4 +90,10 @@ router.post(
   superadminChecker,
   medicalcontroller.getMedicalCentreSummary
 );
+
+router.post(
+  "/medical-centre/:medicalcentre_id/deletetest/:test_id",
+  superadminChecker,
+  testController.deleteTestFromMedicalCentre
+)
 export default router;

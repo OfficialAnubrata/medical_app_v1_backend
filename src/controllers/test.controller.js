@@ -192,58 +192,74 @@ const getTestsForMedicalCentre = expressAsyncHandler(async (req, res) => {
   }
 
   try {
-    let baseQuery = `
-      FROM medical_test AS mt
-      INNER JOIN test_catalog AS tc ON mt.test_id = tc.test_id
-      WHERE mt.medicalcentre_id = $1
-    `;
+    const offset = (page - 1) * limit;
 
+    const filters = [`mt.medicalcentre_id = $1`];
     const params = [medicalcentre_id];
-    let paramIndex = 2;
+    let index = 2;
 
     if (type_of_test) {
-      baseQuery += ` AND tc.type_of_test = $${paramIndex}`;
+      filters.push(`tc.type_of_test = $${index}`);
       params.push(type_of_test);
-      paramIndex++;
+      index++;
     }
 
     if (search) {
-      baseQuery += ` AND LOWER(tc.test_name) LIKE $${paramIndex}`;
+      filters.push(`LOWER(tc.test_name) LIKE $${index}`);
       params.push(`%${search.toLowerCase()}%`);
-      paramIndex++;
+      index++;
     }
 
-    // Get total count for pagination
-    const countResult = await pool.query(`SELECT COUNT(*) ${baseQuery}`, params);
-    const totalItems = parseInt(countResult.rows[0].count, 10);
-    const totalPages = Math.ceil(totalItems / limit);
-    const offset = (page - 1) * limit;
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
-    // Fetch paginated results
-    const dataQuery = `
+    // Single query using CTEs for count, paginated data, and distinct types
+    const fullQuery = `
+      WITH filtered_tests AS (
+        SELECT 
+          mt.medical_test_id,
+          tc.test_id,
+          tc.test_name,
+          tc.type_of_test,
+          tc.components,
+          tc.special_requirements,
+          mt.price,
+          mt.created_at
+        FROM medical_test AS mt
+        JOIN test_catalog AS tc ON mt.test_id = tc.test_id
+        ${whereClause}
+      ),
+      total_count AS (
+        SELECT COUNT(*) AS count FROM filtered_tests
+      ),
+      paginated_tests AS (
+        SELECT * FROM filtered_tests
+        ORDER BY created_at DESC
+        LIMIT $${index} OFFSET $${index + 1}
+      ),
+      type_list AS (
+        SELECT DISTINCT type_of_test FROM filtered_tests
+      )
       SELECT 
-        mt.medical_test_id,
-        tc.test_id,
-        tc.test_name,
-        tc.type_of_test,
-        tc.components,
-        tc.special_requirements,
-        mt.price,
-        mt.created_at
-      ${baseQuery}
-      ORDER BY mt.created_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        (SELECT json_agg(paginated_tests) FROM paginated_tests) AS tests,
+        (SELECT count FROM total_count),
+        (SELECT json_agg(type_of_test) FROM type_list) AS type_of_tests;
     `;
 
     params.push(limit, offset);
 
-    const { rows } = await pool.query(dataQuery, params);
+    const { rows } = await pool.query(fullQuery, params);
+
+    const data = rows[0];
+
+    const totalItems = parseInt(data.count, 10);
+    const totalPages = Math.ceil(totalItems / limit);
 
     return sendSuccess(res, constants.OK, "Tests fetched successfully.", {
       totalItems,
       totalPages,
       currentPage: page,
-      tests: rows,
+      tests: data.tests || [],
+      type_of_tests: data.type_of_tests || []
     });
 
   } catch (error) {
@@ -252,9 +268,43 @@ const getTestsForMedicalCentre = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const deleteTestFromMedicalCentre = expressAsyncHandler(async (req, res) => {
+  const { test_id, medicalcentre_id } = req.params;
+
+  if (!test_id || !medicalcentre_id) {
+    return sendError(res, constants.VALIDATION_ERROR, "Test ID and Medical Centre ID are required.");
+  }
+
+  try {
+    const deleteQuery = `
+      DELETE FROM medical_test
+      WHERE test_id = $1 AND medicalcentre_id = $2
+      RETURNING *;
+    `;
+
+    const { rowCount, rows } = await pool.query(deleteQuery, [test_id, medicalcentre_id]);
+
+    if (rowCount === 0) {
+      return sendError(res, constants.NOT_FOUND, "Test not found in this medical centre.");
+    }
+
+    return sendSuccess(
+      res,
+      constants.OK,
+      "Test removed from medical centre successfully.",
+      rows[0]
+    );
+
+  } catch (error) {
+    logger.info("Error deleting test from medical centre:", error.message);
+    return sendServerError(res, error);
+  }
+});
+
 export default {
   addTestCatalog,
   addTestToMedicalCentre,
   getTestsForMedicalCentre,
-  fetchTestCatalog
+  fetchTestCatalog,
+  deleteTestFromMedicalCentre
 };
