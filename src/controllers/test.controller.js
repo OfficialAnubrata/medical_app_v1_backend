@@ -74,7 +74,7 @@ const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
       filters.push(`LOWER(test_name) LIKE $${queryParams.length}`);
     }
 
-    // Apply filters to both queries
+    // Apply filters
     if (filters.length > 0) {
       baseQuery += ` WHERE ${filters.join(" AND ")}`;
       countQuery += ` WHERE ${filters.join(" AND ")}`;
@@ -85,14 +85,16 @@ const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
     queryParams.push(limit, offset);
     baseQuery += ` ORDER BY test_name ASC LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length};`;
 
-    // Execute count and data queries in parallel
-    const [countResult, dataResult] = await Promise.all([
+    // Queries
+    const [countResult, dataResult, typesResult] = await Promise.all([
       pool.query(countQuery, countParams),
       pool.query(baseQuery, queryParams),
+      pool.query(`SELECT DISTINCT type_of_test FROM test_catalog`)
     ]);
 
     const totalItems = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(totalItems / limit);
+    const allTypes = typesResult.rows.map(row => row.type_of_test);
 
     return sendSuccess(
       res,
@@ -106,6 +108,7 @@ const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
           currentPage: parseInt(page),
           limit: parseInt(limit),
         },
+        type_of_test_list: allTypes
       }
     );
   } catch (error) {
@@ -113,6 +116,7 @@ const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 
 const addTestToMedicalCentre = expressAsyncHandler(async (req, res) => {
