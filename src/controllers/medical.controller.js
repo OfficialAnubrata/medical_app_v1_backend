@@ -211,16 +211,20 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
       return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
     }
 
-    // Step 1: Fetch medical centres with location
+    // Step 1: Fetch medical centres with total test count and types
     const result = await pool.query(`
-      SELECT mc.*, COUNT(mt.medical_test_id) AS total_tests
+      SELECT 
+        mc.*, 
+        COUNT(mt.medical_test_id) AS total_tests,
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT tc.type_of_test), NULL) AS types_of_tests
       FROM medical_centre mc
       LEFT JOIN medical_test mt ON mc.medicalcentre_id = mt.medicalcentre_id
+      LEFT JOIN test_catalog tc ON mt.test_id = tc.test_id
       WHERE mc.mclatitude IS NOT NULL AND mc.mclongitude IS NOT NULL
       GROUP BY mc.medicalcentre_id
     `);
 
-    // Step 2: Process distance, filter radius & search
+    // Step 2: Calculate distance and filter radius & search
     const nearest = result.rows
       .map((centre) => {
         const distance = haversine(latitude, longitude, centre.mclatitude, centre.mclongitude);
@@ -237,7 +241,7 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
     const startIndex = (page - 1) * limit;
     const paginatedData = nearest.slice(startIndex, startIndex + limit);
 
-    // Step 4: Random value (for use case mentioned earlier)
+    // Step 4: Random value
     const randomValue = Math.floor(Math.random() * 4) + 1;
 
     // Step 5: Return response
@@ -255,6 +259,7 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 
 
