@@ -227,6 +227,7 @@ const getTestsForMedicalCentre = expressAsyncHandler(async (req, res) => {
         tc.test_name,
         tc.type_of_test,
         tc.components,
+        tc.special_requirements,
         mt.price,
         mt.created_at
       ${baseQuery}
