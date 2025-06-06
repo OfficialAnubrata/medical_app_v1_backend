@@ -3,8 +3,10 @@ CREATE TABLE IF NOT EXISTS test_catalog (
   test_name VARCHAR(255) NOT NULL,
   type_of_test VARCHAR(100) NOT NULL,
   components JSONB NOT NULL,
+  special_requirements TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE IF NOT EXISTS medical_test (
   medical_test_id VARCHAR(100) PRIMARY KEY,

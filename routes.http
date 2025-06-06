@@ -156,3 +156,18 @@ Authorization: Bearer <your_superadmin_token>
 POST http://localhost:3000/api/v1/medical/tests_catalouge?page=1&limit=10&type_of_test=Imaging&search=ultra
 Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
+
+
+### Update only test catalouge
+POST http://localhost:3000/api/v1/medical/update_tests_catalouge/:test_id
+Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json
+
+{
+  "test_name":"Ultrasound Abdomen image",
+  "special_requirements":"only drink water before the test"
+}
+
+### Delete a test catalog
+POST http://localhost:3000/api/v1/medical/delete_tests_catalouge/:test_id
+Authorization: Bearer <your_superadmin_token>

@@ -5,6 +5,7 @@ import {
 } from "../middlewares/authchecker.middleware.js";
 import medicalcontroller from "../controllers/medical.controller.js";
 import testController from "../controllers/test.controller.js";
+import testcatalougeController from "../controllers/testcatalouge.controller.js";
 import { validateMedicalCentreInput } from "../validators/medical.validator.js";
 const router = express.Router();
 
@@ -43,6 +44,22 @@ router.post(
   "/tests_catalouge",
   superadminChecker,
   testController.fetchTestCatalog
+);
+
+router.post(
+  "/update_tests_catalouge/:test_id",
+  superadminChecker,
+  testcatalougeController.patchTestCatalog
+);
+router.post(
+  "/update_tests_catalouge/:test_id",
+  superadminChecker,
+  testcatalougeController.patchTestCatalog
+);
+router.post(
+  "/delete_tests_catalouge/:test_id",
+  superadminChecker,
+  testcatalougeController.deleteTestCatalog
 );
 router.post(
   "/tests/assign",

@@ -19,25 +19,31 @@ const addTestCatalog = expressAsyncHandler(async (req, res) => {
     return sendError(res, constants.VALIDATION_ERROR, error.details[0].message);
   }
 
-  const { test_name, type_of_test, components } = value;
+  const { test_name, type_of_test, components, special_requirements = null } = value;
+
   try {
     const test_id = uuidv4();
 
     const insertQuery = `
-        INSERT INTO test_catalog (test_id, test_name, type_of_test, components)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *;
-      `;
+      INSERT INTO test_catalog (test_id, test_name, type_of_test, components, special_requirements)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *;
+    `;
+
     const values = [
       test_id,
       test_name,
       type_of_test,
       JSON.stringify(components),
+      special_requirements
     ];
+
     const result = await pool.query(insertQuery, values);
+
     if (result.rowCount === 0) {
       return sendError(res, constants.NOT_FOUND, "Test catalog not found");
     }
+
     return sendSuccess(
       res,
       constants.CREATED,
@@ -49,6 +55,7 @@ const addTestCatalog = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
   try {
