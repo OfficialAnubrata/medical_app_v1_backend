@@ -40,6 +40,11 @@ router.post(
   testController.addTestCatalog
 );
 router.post(
+  "/tests_catalouge",
+  superadminChecker,
+  testController.fetchTestCatalog
+);
+router.post(
   "/tests/assign",
   superadminChecker,
   testController.addTestToMedicalCentre
@@ -51,10 +56,21 @@ router.post(
   userChecker,
   testController.getTestsForMedicalCentre
 );
+// user tests route
+router.post(
+  "/superadmin/tests/centre/:medicalcentre_id",
+  superadminChecker,
+  testController.getTestsForMedicalCentre
+);
 
 router.post(
   "/details/:medicalcentre_id",
   userChecker,
+  medicalcontroller.getMedicalCentreSummary
+);
+router.post(
+  "/superadmin/details/:medicalcentre_id",
+  superadminChecker,
   medicalcontroller.getMedicalCentreSummary
 );
 export default router;

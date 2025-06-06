@@ -50,6 +50,71 @@ const addTestCatalog = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const fetchTestCatalog = expressAsyncHandler(async (req, res) => {
+  try {
+    const { type_of_test, search, page = 1, limit = 10 } = req.query;
+
+    let baseQuery = `SELECT * FROM test_catalog`;
+    let countQuery = `SELECT COUNT(*) FROM test_catalog`;
+    const queryParams = [];
+    const countParams = [];
+    const filters = [];
+
+    // Filtering by type_of_test
+    if (type_of_test) {
+      queryParams.push(type_of_test);
+      countParams.push(type_of_test);
+      filters.push(`type_of_test = $${queryParams.length}`);
+    }
+
+    // Search by test_name (case-insensitive)
+    if (search) {
+      queryParams.push(`%${search.toLowerCase()}%`);
+      countParams.push(`%${search.toLowerCase()}%`);
+      filters.push(`LOWER(test_name) LIKE $${queryParams.length}`);
+    }
+
+    // Apply filters to both queries
+    if (filters.length > 0) {
+      baseQuery += ` WHERE ${filters.join(" AND ")}`;
+      countQuery += ` WHERE ${filters.join(" AND ")}`;
+    }
+
+    // Pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    queryParams.push(limit, offset);
+    baseQuery += ` ORDER BY test_name ASC LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length};`;
+
+    // Execute count and data queries in parallel
+    const [countResult, dataResult] = await Promise.all([
+      pool.query(countQuery, countParams),
+      pool.query(baseQuery, queryParams),
+    ]);
+
+    const totalItems = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return sendSuccess(
+      res,
+      constants.OK,
+      "Test catalog fetched successfully",
+      {
+        data: dataResult.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: parseInt(page),
+          limit: parseInt(limit),
+        },
+      }
+    );
+  } catch (error) {
+    logger.info("Error fetching test catalog:", error.message);
+    return sendServerError(res, error);
+  }
+});
+
+
 const addTestToMedicalCentre = expressAsyncHandler(async (req, res) => {
   const { error, value } = medicalTestSchema.validate(req.body);
   if (error) {
@@ -178,5 +243,6 @@ const getTestsForMedicalCentre = expressAsyncHandler(async (req, res) => {
 export default {
   addTestCatalog,
   addTestToMedicalCentre,
-  getTestsForMedicalCentre
+  getTestsForMedicalCentre,
+  fetchTestCatalog
 };

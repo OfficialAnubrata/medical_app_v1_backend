@@ -137,3 +137,22 @@ Content-Type: application/json
 POST http://localhost:3000/api/v1/medical/details/:medicalcentre_id
 Authorization: Bearer <your_user_token>
 
+
+### Get Tests for Medical Centre (with pagination, filter & search) superadmin
+POST http://localhost:3000/api/v1/medical/superadmin/tests/centre/:medicalcentre_id?page=1&limit=10&type_of_test=Blood&search=liver
+Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json
+
+# Replace {{medicalcentre_id}} with actual medical centre id
+
+
+### Get Medical Centre Details with Test Summary superadmin
+POST http://localhost:3000/api/v1/medical/superadmin/details/:medicalcentre_id
+Authorization: Bearer <your_superadmin_token>
+
+
+
+### Combine filters and pagination fetch test catalouge
+POST http://localhost:3000/api/v1/medical/tests_catalouge?page=1&limit=10&type_of_test=Imaging&search=ultra
+Authorization: Bearer <your_superadmin_token>
+Content-Type: application/json
