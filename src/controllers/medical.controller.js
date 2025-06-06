@@ -201,6 +201,7 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
     const { latitude, longitude, radius = 10 } = req.body;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search?.toLowerCase() || null;
 
     if (!latitude || !longitude) {
       return sendError(res, constants.VALIDATION_ERROR, 'Latitude and longitude are required.');
@@ -221,12 +222,15 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
         return { ...centre, distance };
       })
       .filter((centre) => centre.distance <= radius)
+      .filter((centre) => {
+        if (!search) return true;
+        return centre.medicalcentre_name?.toLowerCase().includes(search);
+      })
       .sort((a, b) => a.distance - b.distance);
 
     const startIndex = (page - 1) * limit;
     const paginatedData = nearest.slice(startIndex, startIndex + limit);
 
-    // Generate random number between 1 and 4
     const randomValue = Math.floor(Math.random() * 4) + 1;
 
     return sendSuccess(res, constants.OK, "Nearest medical centres fetched successfully", {
@@ -243,6 +247,7 @@ const getNearestMedicalCentres = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 const deleteMedicalCentre = expressAsyncHandler(async (req, res) => {
   try {

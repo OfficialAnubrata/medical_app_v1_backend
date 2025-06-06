@@ -88,7 +88,7 @@ Authorization: Bearer <your_superadmin_token>
 Content-Type: application/json
 
 ### Get Nearest Medical Centres (within 100 km) USER
-POST http://localhost:3000/api/v1/medical/getnearestmedicalcentres?page=1&limit=10
+POST http://localhost:3000/api/v1/medical/getnearestmedicalcentres?page=1&limit=10&search=anu
 Authorization: Bearer <your_user_token>
 Content-Type: application/json
 
