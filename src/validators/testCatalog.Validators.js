@@ -25,3 +25,12 @@ export const medicalTestSchema = Joi.object({
     'number.positive': 'Price must be a positive number',
   }),
 });
+
+
+// Joi schema for validating request body
+export const patientSchema = Joi.object({
+  full_name: Joi.string().min(3).max(100).required(),
+  gender: Joi.string().valid('Male', 'Female', 'Other').optional(),
+  dob: Joi.date().optional(),
+  relation: Joi.string().max(50).optional()
+});

@@ -13,3 +13,18 @@ CREATE TABLE IF NOT EXISTS users (
     is_google_user BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS patients (
+  patient_id   VARCHAR(100) PRIMARY KEY,
+  user_id      VARCHAR(100) NOT NULL,
+  full_name    VARCHAR(100) NOT NULL,
+  gender       VARCHAR(10),
+  dob          DATE,                -- date of birth
+  relation     VARCHAR(50),         -- e.g. Self, Father, Mother, etc.
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(user_id)
+    ON DELETE CASCADE
+);
