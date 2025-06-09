@@ -34,3 +34,18 @@ export const patientSchema = Joi.object({
   dob: Joi.date().optional(),
   relation: Joi.string().max(50).optional()
 });
+
+
+export const addAddressSchema = Joi.object({
+  label: Joi.string().max(50).optional().allow(null, ''),
+  address_line: Joi.string().max(255).required(),
+  area: Joi.string().max(100).optional().allow(null, ''),
+  city: Joi.string().max(100).optional().allow(null, ''),
+  district: Joi.string().max(100).optional().allow(null, ''),
+  state: Joi.string().max(100).optional().allow(null, ''),
+  pincode: Joi.string().max(20).optional().allow(null, ''),
+  landmark: Joi.string().max(255).optional().allow(null, ''),
+  contact_number: Joi.string().pattern(/^\+?\d{7,15}$/).optional().allow(null, ''), // simple phone number pattern
+  latitude: Joi.number().min(-90).max(90).optional().allow(null),
+  longitude: Joi.number().min(-180).max(180).optional().allow(null),
+});

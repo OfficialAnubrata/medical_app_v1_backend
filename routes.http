@@ -193,3 +193,26 @@ Authorization: Bearer <your_user_token>
   "dob": "1995-06-15",
   "relation": "Brother"
 }
+
+### add address
+POST http://localhost:3000/api/v1/user/postaddress
+Content-Type: application/json
+Authorization: Bearer <your_user_token>
+
+{
+  "label": "Home",
+  "address_line": "1234 Main St, Apt 101",
+  "area": "Downtown",
+  "city": "Mumbai",
+  "district": "Mumbai Suburban",
+  "state": "Maharashtra",
+  "pincode": "400001",
+  "landmark": "Near City Mall",
+  "contact_number": "+919876543210",
+  "latitude": 19.0760,
+  "longitude": 72.8777
+}
+
+### Get all addresses for the authenticated user
+GET http://localhost:3000/api/v1/user/getalladdresses
+Authorization: Bearer <your_user_token>

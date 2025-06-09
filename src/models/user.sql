@@ -28,3 +28,22 @@ CREATE TABLE IF NOT EXISTS patients (
     REFERENCES users(user_id)
     ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS addresses (
+  address_id VARCHAR(100) PRIMARY KEY,
+  user_id VARCHAR(100) NOT NULL,
+  label VARCHAR(100), -- e.g. Home, Office, Lab, etc.
+  address_line VARCHAR(255) NOT NULL,
+  area VARCHAR(100),
+  city VARCHAR(100),
+  district VARCHAR(100),
+  state VARCHAR(100),
+  pincode VARCHAR(10),
+  landmark VARCHAR(255),
+  contact_number VARCHAR(15),
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
