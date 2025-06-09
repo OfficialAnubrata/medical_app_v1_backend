@@ -214,5 +214,32 @@ Authorization: Bearer <your_user_token>
 }
 
 ### Get all addresses for the authenticated user
-GET http://localhost:3000/api/v1/user/getalladdresses
+POST http://localhost:3000/api/v1/user/getalladdresses
 Authorization: Bearer <your_user_token>
+
+POST http://localhost:3000/api/v1/user/getbookingsummary
+Content-Type: application/json
+Authorization: Bearer <your_user_token>
+{
+  "tests": [
+    { "medical_test_id": "c97787d1-76eb-4e2a-9f62-dd2da2388de2" },
+    { "medical_test_id": "3b6c2383-30c7-4c82-8a76-b2bb3f5a1b31" }
+  ]
+}
+
+### add booking route for user
+POST http://localhost:3000/api/v1/user/addbooking
+Content-Type: application/json
+Authorization: Bearer <your_user_token>
+
+{
+  "patient_id": "d9f070bb-f116-4a4e-b931-b85db08a51fb",
+  "address_id": "4d06eec4-7222-4535-806a-fd22091651e4",
+  "scheduled_date": "2025-06-15T10:30:00",
+  "payment_mode": "UPI",
+  "transaction_id": "txn09876",
+  "tests": [
+    { "medical_test_id": "c97787d1-76eb-4e2a-9f62-dd2da2388de2"},
+    { "medical_test_id": "3b6c2383-30c7-4c82-8a76-b2bb3f5a1b31" }
+  ]
+}
