@@ -14,5 +14,6 @@ router.post('/postaddress',userChecker,patientController.addAddress)
 router.post('/getalladdresses',userChecker,patientController.getAllAddresses)
 router.post('/addbooking',userChecker,bookingController.createBooking)
 router.post('/getbookingsummary',userChecker,bookingController.getTestSummary)
+router.post('/allorders',userChecker,bookingController.allordersuser)
 
 export default router;
