@@ -4,15 +4,21 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100),
     phone VARCHAR(15) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    password TEXT,
     gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
     dob DATE,
     profile_pic TEXT,
     location_latitude DOUBLE PRECISION,
     location_longitude DOUBLE PRECISION,
     is_google_user BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CHECK (
+      (is_google_user = TRUE AND password IS NULL) OR
+      (is_google_user = FALSE AND password IS NOT NULL)
+    )
 );
+
 
 CREATE TABLE IF NOT EXISTS patients (
   patient_id   VARCHAR(100) PRIMARY KEY,
@@ -46,4 +52,13 @@ CREATE TABLE IF NOT EXISTS addresses (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS email_otps (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

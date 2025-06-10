@@ -4,6 +4,8 @@ import authcontroller from "../controllers/auth.controller.js"
 import { validateLogin, validateSignup } from "../validators/auth.validators.js";
 import { refreshAccessToken } from "../controllers/refresh.controller.js";
 
+router.post("/sendotp",authcontroller.sendotp);
+
 router.post("/login",validateLogin,authcontroller.login);
 
 router.post("/signup",validateSignup,authcontroller.signup);
