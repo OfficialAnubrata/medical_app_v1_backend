@@ -264,3 +264,8 @@ Authorization: Bearer <your_user_token>
     { "medical_test_id": "3b6c2383-30c7-4c82-8a76-b2bb3f5a1b31" }
   ]
 }
+
+### all orders details for user
+POST http://localhost:3000/api/v1/user/allorders
+Content-Type: application/json
+Authorization: Bearer <your_user_token>
