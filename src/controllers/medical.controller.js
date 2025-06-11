@@ -24,6 +24,7 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
       district,
       state,
       pincode,
+      logo = "https://cdn-icons-png.flaticon.com/512/9131/9131529.png",
     } = req.body;
     if (!medicalcentre_name || !registration_number || !mobile_no || !email) {
       return sendError(
@@ -32,7 +33,6 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
         "Medical centre Name and registration number, email & phonenumber required"
       );
     }
-    const logo = "https://cdn-icons-png.flaticon.com/512/9131/9131529.png";
     // Normalize email
     email = email?.trim().toLowerCase();
     // Check if a centre with the same email, phone or registration number exists
