@@ -160,7 +160,7 @@ const getTestSummary = expressAsyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error.message);
+       logger.error("Error creating booking:", error.message);
     return sendServerError(res, error);
   }
 });

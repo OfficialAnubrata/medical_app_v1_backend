@@ -42,7 +42,7 @@ const sendotp = expressAsyncHandler(async (req, res) => {
 
     return sendSuccess(res, constants.OK, "OTP sent successfully");
   } catch (error) {
-    console.error("Error sending OTP:", error);
+    logger.error("Error sending OTP:", error);
     return sendServerError(res, error);
   }
 });
@@ -226,7 +226,7 @@ const login = expressAsyncHandler(async (req, res) => {
     });
     return sendSuccess(res, constants.OK, "Login successful", { user, token });
   } catch (error) {
-    logger.info(error.message);
+    logger.error(error.message);
     return sendServerError(res, error);
   }
 });
@@ -289,7 +289,7 @@ const superadminsignup = expressAsyncHandler(async (req, res) => {
       { superadmin, token }
     );
   } catch (error) {
-    logger.info(error.message);
+    logger.error(error.message);
     return sendServerError(res, error);
   }
 });
@@ -345,7 +345,7 @@ const superadminlogin = expressAsyncHandler(async (req, res) => {
       token,
     });
   } catch (error) {
-    logger.info(error.message);
+    logger.error(error.message);
     return sendServerError(res, error);
   }
 });
@@ -402,7 +402,7 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
       token,
     });
   } catch (error) {
-    logger.info("Logging error for medical centre:", error.message);
+    logger.error("Logging error for medical centre:", error.message);
     return sendServerError(res, error);
   }
 });

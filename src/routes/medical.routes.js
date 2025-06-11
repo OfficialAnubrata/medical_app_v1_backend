@@ -61,11 +61,6 @@ router.post(
   testcatalougeController.patchTestCatalog
 );
 router.post(
-  "/update_tests_catalouge/:test_id",
-  superadminChecker,
-  testcatalougeController.patchTestCatalog
-);
-router.post(
   "/delete_tests_catalouge/:test_id",
   superadminChecker,
   testcatalougeController.deleteTestCatalog
