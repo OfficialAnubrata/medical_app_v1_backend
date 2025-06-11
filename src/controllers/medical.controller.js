@@ -11,6 +11,7 @@ import logger from "../utils/logger.utils.js";
 import cryptoRandomString from "crypto-random-string";
 import { sendEmail } from "../utils/sendEmail.utils.js";
 import { haversine } from "../utils/calculatedistance.utils.js";
+import { uploadToCloudinary } from "../utils/cloudnary.utils.js";
 
 const addmedicalcentre = expressAsyncHandler(async (req, res) => {
   try {
@@ -19,66 +20,90 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
       registration_number,
       mobile_no,
       email,
+      address_line = null,
+      area = null,
+      district = null,
+      state = null,
+      pincode = null,
+    } = req.body;
+
+    const logoFile = req.file;
+    const defaultLogo = "https://cdn-icons-png.flaticon.com/512/9131/9131529.png";
+
+    // Validation
+    if (!medicalcentre_name || !registration_number || !mobile_no || !email) {
+      return sendError(
+        res,
+        constants.VALIDATION_ERROR,
+        "Medical centre name, registration number, email, and phone number are required."
+      );
+    }
+
+    // Normalize input
+    medicalcentre_name = medicalcentre_name.trim();
+    registration_number = registration_number.trim();
+    mobile_no = mobile_no.trim();
+    email = email.trim().toLowerCase();
+
+    // Check for duplicates
+    const { rows: existing } = await pool.query(
+      `SELECT 1 FROM medical_centre 
+       WHERE email = $1 OR mobile_no = $2 OR registration_number = $3`,
+      [email, mobile_no, registration_number]
+    );
+
+    if (existing.length > 0) {
+      return sendError(
+        res,
+        constants.CONFLICT,
+        "Medical centre with same email, phone, or registration number already exists."
+      );
+    }
+
+    // Upload logo to Cloudinary (if provided)
+    let logo = defaultLogo;
+    if (logoFile) {
+      const cloudinaryResult = await uploadToCloudinary(logoFile.path, "medicalcentre_logos");
+      if (!cloudinaryResult.success) {
+        return sendError(res, constants.SERVER_ERROR, "Logo upload to Cloudinary failed.");
+      }
+      logo = cloudinaryResult.url;
+    }
+
+    const medicalcentre_id = `MC-${Date.now()}`;
+
+    const insertQuery = `
+      INSERT INTO medical_centre (
+        medicalcentre_id, medicalcentre_name, registration_number, logo,
+        mobile_no, email, address_line, area, district, state, pincode
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `;
+
+    const insertValues = [
+      medicalcentre_id,
+      medicalcentre_name,
+      registration_number,
+      logo,
+      mobile_no,
+      email,
       address_line,
       area,
       district,
       state,
       pincode,
-      logo = "https://cdn-icons-png.flaticon.com/512/9131/9131529.png",
-    } = req.body;
-    if (!medicalcentre_name || !registration_number || !mobile_no || !email) {
-      return sendError(
-        res,
-        constants.VALIDATION_ERROR,
-        "Medical centre Name and registration number, email & phonenumber required"
-      );
-    }
-    // Normalize email
-    email = email?.trim().toLowerCase();
-    // Check if a centre with the same email, phone or registration number exists
-    const existingCentre = await pool.query(
-      `SELECT * FROM medical_centre WHERE email = $1 OR mobile_no = $2 OR registration_number = $3`,
-      [email, mobile_no, registration_number]
-    );
+    ];
 
-    if (existingCentre.rows.length > 0) {
-      return sendError(
-        res,
-        constants.CONFLICT,
-        "Medical centre with same email, phone, or registration number already exists"
-      );
-    }
-
-    // Generate unique ID (you can use UUID if preferred)
-    const medicalcentre_id = `MC-${Date.now()}`;
-
-    const result = await pool.query(
-      `INSERT INTO medical_centre 
-            (medicalcentre_id, medicalcentre_name, registration_number, logo, mobile_no, email, address_line, area, district, state, pincode) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [
-        medicalcentre_id,
-        medicalcentre_name,
-        registration_number,
-        logo,
-        mobile_no.trim(),
-        email,
-        address_line || null,
-        area || null,
-        district || null,
-        state || null,
-        pincode || null,
-      ]
-    );
+    const { rows } = await pool.query(insertQuery, insertValues);
 
     return sendSuccess(
       res,
       constants.CREATED,
-      "medical centre added success fully",
-      result.rows[0]
+      "Medical centre added successfully.",
+      rows[0]
     );
   } catch (error) {
-    logger.info(error.message);
+    logger.error("Add Medical Centre Error:", error.message);
     return sendServerError(res, error);
   }
 });

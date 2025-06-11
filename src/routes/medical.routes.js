@@ -7,12 +7,14 @@ import medicalcontroller from "../controllers/medical.controller.js";
 import testController from "../controllers/test.controller.js";
 import testcatalougeController from "../controllers/testcatalouge.controller.js";
 import { validateMedicalCentreInput } from "../validators/medical.validator.js";
+import { upload } from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
 router.post(
   "/addmedicalcentre",
   superadminChecker,
   validateMedicalCentreInput,
+  upload.single("logo"),
   medicalcontroller.addmedicalcentre
 );
 router.post(
