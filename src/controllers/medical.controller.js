@@ -107,7 +107,78 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+const editMedicalCentre = expressAsyncHandler(async (req, res) => {
+  try {
+    const medicalcentre_id  = req.params.medicalcentre_id;
+    if (!medicalcentre_id) {
+      return sendError(res, constants.VALIDATION_ERROR, "Medical centre ID is required");
+    }
 
+    const {
+      medicalcentre_name,
+      registration_number,
+      mobile_no,
+      email,
+      address_line,
+      area,
+      district,
+      state,
+      pincode
+    } = req.body;
+
+    // Check existence
+    const existing = await pool.query(`SELECT * FROM medical_centre WHERE medicalcentre_id = $1`, [medicalcentre_id]);
+    if (existing.rows.length === 0) {
+      return sendError(res, constants.NOT_FOUND, "Medical centre not found");
+    }
+
+    let logoUrl = existing.rows[0].logo;
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(req.file.path, "medical_centre_logos");
+      if (!uploadResult.success) {
+        return sendError(res, constants.SERVER_ERROR, "Logo upload failed");
+      }
+      logoUrl = uploadResult.url;
+    }
+
+    const updateQuery = `
+      UPDATE medical_centre SET
+        medicalcentre_name = $1,
+        registration_number = $2,
+        mobile_no = $3,
+        email = $4,
+        address_line = $5,
+        area = $6,
+        district = $7,
+        state = $8,
+        pincode = $9,
+        logo = $10
+      WHERE medicalcentre_id = $11
+      RETURNING *
+    `;
+
+    const values = [
+      medicalcentre_name || existing.rows[0].medicalcentre_name,
+      registration_number || existing.rows[0].registration_number,
+      mobile_no || existing.rows[0].mobile_no,
+      (email || existing.rows[0].email)?.trim().toLowerCase(),
+      address_line || existing.rows[0].address_line,
+      area || existing.rows[0].area,
+      district || existing.rows[0].district,
+      state || existing.rows[0].state,
+      pincode || existing.rows[0].pincode,
+      logoUrl,
+      medicalcentre_id
+    ];
+
+    const updated = await pool.query(updateQuery, values);
+
+    return sendSuccess(res, constants.OK, "Medical centre updated successfully", updated.rows[0]);
+  } catch (error) {
+    console.error("Edit Medical Centre Error:", error.message);
+    return sendServerError(res, error);
+  }
+});
 
 const verifyCentre = expressAsyncHandler(async (req, res) => {
   const client = await pool.connect();
@@ -361,5 +432,6 @@ export default {
   getAllMedicalCentres,
   getNearestMedicalCentres,
   deleteMedicalCentre,
-  getMedicalCentreSummary
+  getMedicalCentreSummary,
+  editMedicalCentre
 };

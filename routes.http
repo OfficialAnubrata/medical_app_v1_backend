@@ -285,3 +285,10 @@ Content-Disposition: form-data; name="prescription"; filename="prescription.pdf"
 Content-Type: application/pdf
 
 
+POST http://localhost:3000/api/v1/medical/updatemedicalcentre/:medicalcentre_id
+Content-Type: multipart/form-data
+
+Form fields:
+- medicalcentre_name: Green Valley Hospital (Updated)
+- mobile_no: 8888777700
+- logo: (file)

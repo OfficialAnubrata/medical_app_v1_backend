@@ -18,6 +18,13 @@ router.post(
   medicalcontroller.addmedicalcentre
 );
 router.post(
+  "/updatemedicalcentre/:medicalcentre_id",
+  superadminChecker,
+  validateMedicalCentreInput,
+  upload.single("logo"),
+  medicalcontroller.editMedicalCentre
+)
+router.post(
   "/verifycentres/:medicalCentreId",
   superadminChecker,
   medicalcontroller.verifyCentre
