@@ -215,6 +215,10 @@ Authorization: Bearer <your_user_token>
   "dob": "1995-06-15",
   "relation": "Brother"
 }
+Content-Type: multipart/form-data; 
+
+Content-Disposition: form-data; name="prescription"; filename="prescription.pdf"
+Content-Type: application/pdf
 
 ### add address
 POST http://localhost:3000/api/v1/user/postaddress
