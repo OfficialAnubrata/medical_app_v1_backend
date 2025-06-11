@@ -131,7 +131,8 @@ Content-Type: application/json
 {
   "test_name": "Ultrasound Abdomen",
   "type_of_test": "Imaging",
-  "components": ["Liver", "Gallbladder", "Pancreas", "Kidneys", "Spleen"]
+  "components": ["Liver", "Gallbladder", "Pancreas", "Kidneys", "Spleen"],
+  "special_requirements":"only drink water before the test"
 }
 
 ### Add Test to Centre
