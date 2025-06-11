@@ -270,3 +270,14 @@ Authorization: Bearer <your_user_token>
 POST http://localhost:3000/api/v1/user/allorders
 Content-Type: application/json
 Authorization: Bearer <your_user_token>
+
+
+### Upload prescription for a patient
+POST http://localhost:3000/api/v1/user/addprescription/:patient_id
+Authorization: Bearer <your_user_token>
+Content-Type: multipart/form-data; 
+
+Content-Disposition: form-data; name="prescription"; filename="prescription.pdf"
+Content-Type: application/pdf
+
+

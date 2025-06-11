@@ -142,3 +142,9 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+# Ignore everything inside uploads/
+uploads/*
+
+# But do not ignore the folder itself and this file
+!uploads/.gitkeep

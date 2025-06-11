@@ -62,3 +62,16 @@ CREATE TABLE IF NOT EXISTS email_otps (
     verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS prescriptions (
+  prescription_id VARCHAR(100) PRIMARY KEY,
+  patient_id VARCHAR(100) NOT NULL,
+  prescription_file TEXT NOT NULL, -- Path or URL to uploaded file (image or PDF)
+  prescription_date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_prescription_patient
+    FOREIGN KEY (patient_id)
+    REFERENCES patients(patient_id)
+    ON DELETE CASCADE
+);

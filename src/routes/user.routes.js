@@ -5,6 +5,7 @@ import {
 } from "../middlewares/authchecker.middleware.js";
 import patientController from "../controllers/patient.controller.js";
 import bookingController from "../controllers/booking.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = express.Router();
 
@@ -15,5 +16,6 @@ router.post('/getalladdresses',userChecker,patientController.getAllAddresses)
 router.post('/addbooking',userChecker,bookingController.createBooking)
 router.post('/getbookingsummary',userChecker,bookingController.getTestSummary)
 router.post('/allorders',userChecker,bookingController.allordersuser)
+router.post('/addprescription/:patient_id',userChecker,upload.single('prescription'),patientController.addPrescription)
 
 export default router;
