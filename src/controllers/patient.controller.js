@@ -12,45 +12,78 @@ import { addAddressSchema, patientSchema } from "../validators/testCatalog.Valid
 import { uploadToCloudinary } from "../utils/cloudnary.utils.js";
 
 const addPatient = expressAsyncHandler(async (req, res) => {
-    try {
-        const { error, value } = patientSchema.validate(req.body);
-        if (error) {
-            return sendError(
-                res,
-                constants.VALIDATION_ERROR,
-                error.details[0].message
-            );
-        }
-        const user_id = req.user?.user_id; // ✅ Extracted from JWT
-        if (!user_id) {
-            return sendError(res, constants.UNAUTHORIZED, "User not authenticated");
-        }
+  const client = await pool.connect();
 
-        const { full_name, gender, dob, relation } = value;
-
-        const patient_id = uuidv4();
-
-        const insertQuery = `
-            INSERT INTO patients (patient_id, user_id, full_name, gender, dob, relation)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *;
-        `;
-
-        const values = [patient_id, user_id, full_name, gender, dob, relation];
-
-        const result = await pool.query(insertQuery, values);
-
-        return sendSuccess(
-            res,
-            constants.CREATED,
-            "Patient added successfully",
-            result.rows[0]
-        );
-    } catch (error) {
-        logger.info(`Add Patient Error: ${error.message}`);
-        return sendServerError(res, error);
+  try {
+    // 1. Validate input
+    const { error, value } = patientSchema.validate(req.body);
+    if (error) {
+      return sendError(res, constants.VALIDATION_ERROR, error.details[0].message);
     }
+
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return sendError(res, constants.UNAUTHORIZED, "User not authenticated");
+    }
+
+    const { full_name, gender, dob, relation } = value;
+    const patient_id = uuidv4();
+    const prescription = req.file;
+
+    await client.query("BEGIN");
+
+    // 2. Insert patient
+    const insertPatientQuery = `
+      INSERT INTO patients (patient_id, user_id, full_name, gender, dob, relation)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING patient_id, full_name, gender, dob, relation, created_at
+    `;
+    const patientValues = [
+      patient_id,
+      user_id,
+      full_name.trim(),
+      gender,
+      dob,
+      relation?.trim() || null,
+    ];
+    const { rows: [patient] } = await client.query(insertPatientQuery, patientValues);
+
+    // 3. If prescription file exists, upload and insert
+    let prescription_url = null;
+
+    if (prescription) {
+      const { success, url, error } = await uploadToCloudinary(prescription.path, "prescriptions");
+      if (!success) {
+        await client.query("ROLLBACK");
+        return sendError(res, constants.INTERNAL_SERVER_ERROR, `Cloudinary upload failed: ${error}`);
+      }
+
+      prescription_url = url;
+      const prescription_id = uuidv4();
+
+      const prescriptionresult = await client.query(`
+        INSERT INTO prescriptions (prescription_id, patient_id, prescription_file)
+        VALUES ($1, $2, $3)
+        RETURNING *
+      `, [prescription_id, patient_id, prescription_url]);
+    }
+
+    await client.query("COMMIT");
+
+    return sendSuccess(res, constants.CREATED, "Patient added successfully", {
+      ...patient,
+      ...(prescription_url ? { prescriptions: [{ prescription_file: prescription_url }] } : {})
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    logger.error("Add Patient Error:", error.message);
+    return sendServerError(res, error);
+  } finally {
+    client.release();
+  }
 });
+
 
 const getAllPatients = expressAsyncHandler(async (req, res) => {
   try {

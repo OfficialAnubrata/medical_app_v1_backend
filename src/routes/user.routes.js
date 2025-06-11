@@ -9,7 +9,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 const router = express.Router();
 
-router.post('/addpaitents',userChecker,patientController.addPatient)
+router.post('/addpaitents',userChecker,upload.single('prescription'),patientController.addPatient)
 router.post('/getallpatients',userChecker,patientController.getAllPatients)
 router.post('/postaddress',userChecker,patientController.addAddress)
 router.post('/getalladdresses',userChecker,patientController.getAllAddresses)
