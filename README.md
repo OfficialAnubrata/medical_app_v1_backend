@@ -83,12 +83,20 @@ This repository contains the backend code for the Medical App v1, a Node.js/Expr
 Create a `.env` file in the root directory with the following variables (example):
 
 ```
-PORT=5000
-DATABASE_URL=postgresql://user:password@localhost:5432/medical_app
-JWT_SECRET=your_jwt_secret
-CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_email_password
+DATABASE_URL=
+# Authetication config
+JWT_SECRET = 
+JWT_EXPIRY_TIME=
+REFESH_TOKEN_SECRET= 
+
+# Nodemailer config
+NODEMAILER_GMAIL=
+NODEMAILER_GMAIL_PASS=
+
+# cloudnary config
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_API_KEY=
 ```
 
 ---
