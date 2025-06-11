@@ -284,8 +284,9 @@ Content-Type: multipart/form-data;
 Content-Disposition: form-data; name="prescription"; filename="prescription.pdf"
 Content-Type: application/pdf
 
-
+### update medicalcentre
 POST http://localhost:3000/api/v1/medical/updatemedicalcentre/:medicalcentre_id
+Authorization: Bearer<your_superadmin_token>
 Content-Type: multipart/form-data
 
 Form fields:
