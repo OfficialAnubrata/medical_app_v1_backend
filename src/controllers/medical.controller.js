@@ -115,7 +115,7 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
 
 const editMedicalCentre = expressAsyncHandler(async (req, res) => {
   try {
-    const medicalcentre_id  = req.params.medicalcentre_id;
+    const medicalcentre_id = req.params.medicalcentre_id;
     if (!medicalcentre_id) {
       return sendError(res, constants.VALIDATION_ERROR, "Medical centre ID is required");
     }
@@ -129,7 +129,9 @@ const editMedicalCentre = expressAsyncHandler(async (req, res) => {
       area,
       district,
       state,
-      pincode
+      pincode,
+      mclongitude,
+      mclatitude
     } = req.body;
 
     // Check existence
@@ -138,7 +140,10 @@ const editMedicalCentre = expressAsyncHandler(async (req, res) => {
       return sendError(res, constants.NOT_FOUND, "Medical centre not found");
     }
 
-    let logoUrl = existing.rows[0].logo;
+    const current = existing.rows[0];
+
+    // Handle logo upload
+    let logoUrl = current.logo;
     if (req.file) {
       const uploadResult = await uploadToCloudinary(req.file.path, "medical_centre_logos");
       if (!uploadResult.success) {
@@ -158,22 +163,26 @@ const editMedicalCentre = expressAsyncHandler(async (req, res) => {
         district = $7,
         state = $8,
         pincode = $9,
-        logo = $10
-      WHERE medicalcentre_id = $11
+        logo = $10,
+        mclongitude = $11,
+        mclatitude = $12
+      WHERE medicalcentre_id = $13
       RETURNING *
     `;
 
     const values = [
-      medicalcentre_name || existing.rows[0].medicalcentre_name,
-      registration_number || existing.rows[0].registration_number,
-      mobile_no || existing.rows[0].mobile_no,
-      (email || existing.rows[0].email)?.trim().toLowerCase(),
-      address_line || existing.rows[0].address_line,
-      area || existing.rows[0].area,
-      district || existing.rows[0].district,
-      state || existing.rows[0].state,
-      pincode || existing.rows[0].pincode,
+      medicalcentre_name || current.medicalcentre_name,
+      registration_number || current.registration_number,
+      mobile_no || current.mobile_no,
+      (email || current.email)?.trim().toLowerCase(),
+      address_line || current.address_line,
+      area || current.area,
+      district || current.district,
+      state || current.state,
+      pincode || current.pincode,
       logoUrl,
+      mclongitude ?? current.mclongitude,
+      mclatitude ?? current.mclatitude,
       medicalcentre_id
     ];
 
@@ -185,6 +194,7 @@ const editMedicalCentre = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 const verifyCentre = expressAsyncHandler(async (req, res) => {
   const client = await pool.connect();
