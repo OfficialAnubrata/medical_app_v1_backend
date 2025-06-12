@@ -4,6 +4,9 @@ export const testCatalogSchema = Joi.object({
   test_name: Joi.string().trim().required().messages({
     'any.required': 'Test name is required',
   }),
+  special_requirements: Joi.string().trim().required().messages({
+    'any.required': 'special requirements is required',
+  }),
   type_of_test: Joi.string().trim().required().messages({
     'any.required': 'Type of test is required',
   }),
