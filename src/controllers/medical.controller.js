@@ -25,6 +25,8 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
       district = null,
       state = null,
       pincode = null,
+      mclongitude = null,
+      mclatitude = null,
     } = req.body;
 
     const logoFile = req.file;
@@ -75,8 +77,9 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
     const insertQuery = `
       INSERT INTO medical_centre (
         medicalcentre_id, medicalcentre_name, registration_number, logo,
-        mobile_no, email, address_line, area, district, state, pincode
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        mobile_no, email, address_line, area, district, state, pincode,
+        mclongitude, mclatitude
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -92,6 +95,8 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
       district,
       state,
       pincode,
+      mclongitude,
+      mclatitude,
     ];
 
     const { rows } = await pool.query(insertQuery, insertValues);
@@ -107,6 +112,7 @@ const addmedicalcentre = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 const editMedicalCentre = expressAsyncHandler(async (req, res) => {
   try {
     const medicalcentre_id  = req.params.medicalcentre_id;
