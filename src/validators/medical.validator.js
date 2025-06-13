@@ -22,6 +22,8 @@ const medicalCentreSchema = Joi.object({
   pincode: Joi.string().pattern(/^[0-9]{5,10}$/).allow(null, '').messages({
     'string.pattern.base': 'Pincode must be 5 to 10 digits',
   }),
+  mclatitude: Joi.number().allow(null, ''),
+  mclongitude: Joi.number().allow(null, ''),
 });
 
 export function validateMedicalCentreInput(req, res, next) {
