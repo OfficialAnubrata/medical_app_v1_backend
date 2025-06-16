@@ -301,10 +301,26 @@ const deleteTestFromMedicalCentre = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const fetchtesttypes = expressAsyncHandler(async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT DISTINCT type_of_test FROM test_catalog`);
+    
+    // Extract just the values into a plain array
+    const testTypes = rows.map(row => row.type_of_test);
+
+    return sendSuccess(res, constants.OK, "Test types fetched successfully.", testTypes);
+
+  } catch (error) {
+    logger.error("Error fetching test types:", error.message);
+    return sendServerError(res, error);
+  }
+});
+
 export default {
   addTestCatalog,
   addTestToMedicalCentre,
   getTestsForMedicalCentre,
   fetchTestCatalog,
-  deleteTestFromMedicalCentre
+  deleteTestFromMedicalCentre,
+  fetchtesttypes
 };

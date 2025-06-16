@@ -293,3 +293,9 @@ Form fields:
 - medicalcentre_name: Green Valley Hospital (Updated)
 - mobile_no: 8888777700
 - logo: (file)
+
+
+### fetch all test type_of_test
+POST http://localhost:3000/api/v1/medical/fetchtesttypes
+Authorization: Bearer<your_user_token>
+Content-Type: application/json

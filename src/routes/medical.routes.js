@@ -100,4 +100,6 @@ router.post(
   superadminChecker,
   testController.deleteTestFromMedicalCentre
 )
+
+router.post("/fetchtesttypes", userChecker, testController.fetchtesttypes);
 export default router;
