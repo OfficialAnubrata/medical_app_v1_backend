@@ -299,3 +299,9 @@ Form fields:
 POST http://localhost:3000/api/v1/medical/fetchtesttypes
 Authorization: Bearer<your_user_token>
 Content-Type: application/json
+
+
+### get booking details by id
+POST http://localhost:3000/api/v1/user/bookingdetails/:booking_id
+Authorization: Bearer<your_user_token>
+Content-Type: application/json

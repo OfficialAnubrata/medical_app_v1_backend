@@ -312,8 +312,143 @@ const allordersuser = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getBookingById = expressAsyncHandler(async (req, res) => {
+  try {
+    const bookingID = req.params.booking_id;
+
+    if (!bookingID) {
+      return sendServerError(res, new Error("Booking ID is required"));
+    }
+
+    const query = `
+      SELECT 
+        tb.booking_id,
+        tb.user_id,
+        tb.patient_id,
+        tb.address_id,
+        tb.booking_date,
+        tb.scheduled_date,
+        tb.status,
+        tb.payment_status,
+        tb.payment_mode,
+        tb.transaction_id,
+        tb.created_at,
+
+        -- Patient details
+        p.full_name as patient_name,
+        p.gender as patient_gender,
+        p.dob as patient_dob,
+        p.relation as patient_relation,
+
+        -- Address details (if available)
+        a.label as address_label,
+        a.address_line,
+        a.area,
+        a.city,
+        a.district,
+        a.state,
+        a.pincode,
+        a.landmark,
+        a.contact_number,
+
+        -- Aggregated booking items
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'item_id', tbi.item_id,
+              'medical_test_id', tbi.medical_test_id,
+              'test_price', tbi.test_price,
+              'report_link', tbi.report_link,
+              'item_status', tbi.status,
+              'test_name', tc.test_name,
+              'test_type', tc.type_of_test,
+              'components', tc.components,
+              'special_requirements', tc.special_requirements,
+              'medical_centre_name', mc.medicalcentre_name
+            ) ORDER BY tbi.created_at
+          ) FILTER (WHERE tbi.item_id IS NOT NULL),
+          '[]'::json
+        ) as booking_items,
+
+        -- Total amount
+        COALESCE(SUM(tbi.test_price), 0) as total_amount,
+        COUNT(tbi.item_id) as total_tests
+
+      FROM test_bookings tb
+      LEFT JOIN patients p ON tb.patient_id = p.patient_id
+      LEFT JOIN addresses a ON tb.address_id = a.address_id
+      LEFT JOIN test_booking_items tbi ON tb.booking_id = tbi.booking_id
+      LEFT JOIN medical_test mt ON tbi.medical_test_id = mt.medical_test_id
+      LEFT JOIN test_catalog tc ON mt.test_id = tc.test_id
+      LEFT JOIN medical_centre mc ON mt.medicalcentre_id = mc.medicalcentre_id
+
+      WHERE tb.booking_id = $1
+
+      GROUP BY 
+        tb.booking_id, tb.user_id, tb.patient_id, tb.address_id,
+        tb.booking_date, tb.scheduled_date, tb.status, tb.payment_status,
+        tb.payment_mode, tb.transaction_id, tb.created_at,
+        p.full_name, p.gender, p.dob, p.relation,
+        a.label, a.address_line, a.area, a.city, a.district, 
+        a.state, a.pincode, a.landmark, a.contact_number
+    `;
+
+    const result = await pool.query(query, [bookingID]);
+
+    if (result.rows.length === 0) {
+      return sendServerError(res, new Error("Booking not found"));
+    }
+
+    const row = result.rows[0];
+
+    const booking = {
+      booking_id: row.booking_id,
+      user_id: row.user_id,
+      booking_date: row.booking_date,
+      scheduled_date: row.scheduled_date,
+      status: row.status,
+      payment_status: row.payment_status,
+      payment_mode: row.payment_mode,
+      transaction_id: row.transaction_id,
+      total_amount: parseFloat(row.total_amount),
+      total_tests: parseInt(row.total_tests),
+      created_at: row.created_at,
+
+      patient: {
+        patient_id: row.patient_id,
+        name: row.patient_name,
+        gender: row.patient_gender,
+        dob: row.patient_dob,
+        relation: row.patient_relation
+      },
+
+      address: row.address_id ? {
+        address_id: row.address_id,
+        label: row.address_label,
+        address_line: row.address_line,
+        area: row.area,
+        city: row.city,
+        district: row.district,
+        state: row.state,
+        pincode: row.pincode,
+        landmark: row.landmark,
+        contact_number: row.contact_number
+      } : null,
+
+      tests: row.booking_items || []
+    };
+
+    return sendSuccess(res, constants.OK, "Booking fetched successfully", { booking });
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
+
+
 export default {
     createBooking,
     getTestSummary,
-    allordersuser
+    allordersuser,
+    getBookingById
 }
