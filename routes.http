@@ -313,7 +313,7 @@ Authorization: Bearer<your_superadmin_token>
 Content-Type: application/json
 
 ### Change test item status by superadmin
-PATCH http://localhost:3000/api/v1/superadmin/changeteststatus/:booking_id
+POST http://localhost:3000/api/v1/superadmin/changeteststatus/:booking_id
 Content-Type: application/json
 Authorization: Bearer <your_superadmin_token>
 
