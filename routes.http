@@ -311,3 +311,13 @@ Content-Type: application/json
 POST http://localhost:3000/api/v1/superadmin/allorders
 Authorization: Bearer<your_superadmin_token>
 Content-Type: application/json
+
+### Change test item status by superadmin
+PATCH http://localhost:3000/api/v1/superadmin/changeteststatus/:booking_id
+Content-Type: application/json
+Authorization: Bearer <your_superadmin_token>
+
+{
+  "item_id": "a6f77b9c-0b08-4748-a7cb-d45340f4a6db",
+  "status": "Cancelled"
+}

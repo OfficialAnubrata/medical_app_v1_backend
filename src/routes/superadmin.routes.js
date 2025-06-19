@@ -5,5 +5,6 @@ import superadminBookingController from "../controllers/superadmin.booking.contr
 import { superadminChecker } from "../middlewares/authchecker.middleware.js";
 
 router.post('/allorders',superadminChecker,superadminBookingController.allorderfromsuperadmin)
+router.post('/changeteststatus/:booking_id',superadminChecker,superadminBookingController.changeteststatusbysuperadmin)
 
 export default router;

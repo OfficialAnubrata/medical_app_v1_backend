@@ -68,4 +68,47 @@ const allorderfromsuperadmin = expressAsyncHandler(async (req, res) => {
     }
 });
 
-export default{ allorderfromsuperadmin };
+const changeteststatusbysuperadmin = expressAsyncHandler(async (req, res) => {
+    try {
+        const { item_id, status } = req.body;
+        const { booking_id } = req.params;
+
+        // Validate input
+        if (!item_id || !status || !booking_id) {
+            return sendError(res, constants.VALIDATION_ERROR, "item_id, status, and booking_id are required.");
+        }
+
+        const allowedStatuses = [
+            'sample collection due',
+            'sample collected',
+            'sample processing',
+            'report generated',
+            'report delivery',
+            'Cancelled'
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return sendError(res, constants.VALIDATION_ERROR, "Invalid status value.");
+        }
+
+        // Perform update and check rowCount (single query)
+        const { rowCount } = await pool.query(
+            `UPDATE test_booking_items
+             SET status = $1
+             WHERE item_id = $2 AND booking_id = $3`,
+            [status, item_id, booking_id]
+        );
+
+        if (rowCount === 0) {
+            return sendError(res, constants.NOT_FOUND, "Test item not found or does not belong to the booking.");
+        }
+
+        return sendSuccess(res, constants.OK, "Test status updated successfully.");
+    } catch (error) {
+        logger.error("Error changing test status by superadmin:", error.message);
+        return sendServerError(res, error);
+    }
+});
+
+
+export default{ allorderfromsuperadmin, changeteststatusbysuperadmin };
