@@ -205,6 +205,7 @@ const addAddress = expressAsyncHandler(async (req, res) => {
         return sendServerError(res, error);
     }
 });
+
 const getAllAddresses = expressAsyncHandler(async (req, res) => {
   try {
     const user_id = req.user?.user_id;
