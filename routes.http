@@ -305,3 +305,9 @@ Content-Type: application/json
 POST http://localhost:3000/api/v1/user/bookingdetails/:booking_id
 Authorization: Bearer<your_user_token>
 Content-Type: application/json
+
+
+### get all order details by superadmin
+POST http://localhost:3000/api/v1/superadmin/allorders
+Authorization: Bearer<your_superadmin_token>
+Content-Type: application/json

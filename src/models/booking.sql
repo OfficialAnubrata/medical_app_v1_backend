@@ -25,12 +25,20 @@ CREATE TABLE IF NOT EXISTS test_booking_items (
     medical_test_id VARCHAR(100) NOT NULL,
     test_price NUMERIC(10, 2) NOT NULL,
     report_link TEXT,
-    status VARCHAR(50) DEFAULT 'Pending',             -- Optional: track per-test status
+    status VARCHAR(50) DEFAULT 'sample collection due', -- More descriptive default
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_booking FOREIGN KEY (booking_id) REFERENCES test_bookings(booking_id) ON DELETE CASCADE,
     CONSTRAINT fk_medical_test FOREIGN KEY (medical_test_id) REFERENCES medical_test(medical_test_id) ON DELETE CASCADE,
 
-    CHECK (status IN ('Pending', 'In Progress', 'Completed', 'Cancelled'))
+    CHECK (status IN (
+        'sample collection due',
+        'sample collected',
+        'sample processing',
+        'report generated',
+        'report delivery',
+        'Cancelled'
+    ))
 );
+
