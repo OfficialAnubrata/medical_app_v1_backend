@@ -442,6 +442,89 @@ const getMedicalCentreSummary = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getTests = expressAsyncHandler(async (req, res) => {
+  let { page = 1, limit = 10, type_of_test, search } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  if (page < 1 || limit < 1) {
+    return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
+  }
+
+  try {
+    const offset = (page - 1) * limit;
+
+    const filters = [];
+    const params = [];
+    let index = 1;
+
+    if (type_of_test) {
+      filters.push(`tc.type_of_test = $${index}`);
+      params.push(type_of_test);
+      index++;
+    }
+
+    if (search) {
+      filters.push(`LOWER(tc.test_name) LIKE $${index}`);
+      params.push(`%${search.toLowerCase()}%`);
+      index++;
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const fullQuery = `
+      WITH filtered_tests AS (
+        SELECT 
+          mt.medical_test_id,
+          tc.test_id,
+          tc.test_name,
+          tc.type_of_test,
+          tc.components,
+          tc.special_requirements,
+          mt.price,
+          mt.created_at,
+          mc.medicalcentre_name
+        FROM medical_test AS mt
+        JOIN test_catalog AS tc ON mt.test_id = tc.test_id
+        JOIN medical_centre AS mc ON mt.medicalcentre_id = mc.medicalcentre_id
+        ${whereClause}
+      ),
+      total_count AS (
+        SELECT COUNT(*) AS count FROM filtered_tests
+      ),
+      paginated_tests AS (
+        SELECT * FROM filtered_tests
+        ORDER BY created_at DESC
+        LIMIT $${index} OFFSET $${index + 1}
+      )
+      SELECT 
+        (SELECT json_agg(paginated_tests) FROM paginated_tests) AS tests,
+        (SELECT count FROM total_count) AS count;
+    `;
+
+    params.push(limit, offset);
+
+    const { rows } = await pool.query(fullQuery, params);
+
+    const data = rows[0];
+    const totalItems = parseInt(data.count, 10);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return sendSuccess(res, constants.OK, "Tests fetched successfully.", {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      tests: data.tests || []
+    });
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
+
+
 export default {
   addmedicalcentre,
   verifyCentre,
@@ -449,5 +532,6 @@ export default {
   getNearestMedicalCentres,
   deleteMedicalCentre,
   getMedicalCentreSummary,
-  editMedicalCentre
+  editMedicalCentre,
+  getTests
 };

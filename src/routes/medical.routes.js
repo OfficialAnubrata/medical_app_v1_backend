@@ -8,6 +8,7 @@ import testController from "../controllers/test.controller.js";
 import testcatalougeController from "../controllers/testcatalouge.controller.js";
 import { validateMedicalCentreInput } from "../validators/medical.validator.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import medicalController from "../controllers/medical.controller.js";
 const router = express.Router();
 
 router.post(
@@ -102,4 +103,6 @@ router.post(
 )
 
 router.post("/fetchtesttypes", userChecker, testController.fetchtesttypes);
+
+router.post("/fetchtests/user", userChecker, medicalController.getTests);
 export default router;

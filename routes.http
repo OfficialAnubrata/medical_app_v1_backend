@@ -321,3 +321,8 @@ Authorization: Bearer <your_superadmin_token>
   "item_id": "a6f77b9c-0b08-4748-a7cb-d45340f4a6db",
   "status": "Cancelled"
 }
+
+### Get Tests with Filters (type_of_test and search)
+POST http://localhost:3000/api/v1/medical/fetchtests/user?page=1&limit=10&type_of_test=Blood&search=Count
+Authorization: Bearer <your_user_token>
+Content-Type: application/json
