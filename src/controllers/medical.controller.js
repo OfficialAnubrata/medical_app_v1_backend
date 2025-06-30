@@ -477,6 +477,7 @@ const getTests = expressAsyncHandler(async (req, res) => {
       WITH filtered_tests AS (
         SELECT 
           mt.medical_test_id,
+          mt.medicalcentre_id,
           tc.test_id,
           tc.test_name,
           tc.type_of_test,
