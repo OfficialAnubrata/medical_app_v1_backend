@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import logger from "../utils/logger.utils.js";
 import constants from "../config/constants.config.js";
 import pool from "../config/db.config.js";
+import { getRoadDistance } from "../utils/road.distance.utils.js";
 
 const createBooking = expressAsyncHandler(async (req, res) => {
     const client = await pool.connect();
@@ -445,10 +446,34 @@ const getBookingById = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const distancebetweenpoints = expressAsyncHandler(async (req, res) => {
+  try {
+    const { lon1, lat1, lon2, lat2 } = req.body;
+
+    if ([lon1, lat1, lon2, lat2].some(coord => coord === undefined)) {
+      return sendError(res, constants.VALIDATION_ERROR, "All coordinates are required.");
+    }
+
+    const origin = [parseFloat(lon1), parseFloat(lat1)];
+    const destination = [parseFloat(lon2), parseFloat(lat2)];
+
+    const result = await getRoadDistance(origin, destination);
+
+    if (!result) {
+      return sendError(res, constants.INTERNAL_SERVER_ERROR, "Failed to calculate distance.");
+    }
+
+    return sendSuccess(res, constants.OK, "Distance calculated successfully.", result);
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
 
 export default {
     createBooking,
     getTestSummary,
     allordersuser,
-    getBookingById
+    getBookingById,
+    distancebetweenpoints
 }

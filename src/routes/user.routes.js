@@ -18,5 +18,6 @@ router.post('/getbookingsummary',userChecker,bookingController.getTestSummary)
 router.post('/allorders',userChecker,bookingController.allordersuser)
 router.post('/bookingdetails/:booking_id',userChecker,bookingController.getBookingById);
 router.post('/addprescription/:patient_id',userChecker,upload.single('prescription'),patientController.addPrescription)
+router.post("/distance",userChecker,bookingController.distancebetweenpoints)
 
 export default router;
