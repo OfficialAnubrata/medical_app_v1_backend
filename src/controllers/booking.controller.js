@@ -110,6 +110,7 @@ const getTestSummary = expressAsyncHandler(async (req, res) => {
         tc.special_requirements,
         mc.medicalcentre_id,
         mc.medicalcentre_name,
+        mc.logo,
         mc.address_line,
         mc.area,
         mc.district,
@@ -133,6 +134,7 @@ const getTestSummary = expressAsyncHandler(async (req, res) => {
         grouped[row.medicalcentre_id] = {
           medicalcentre_id: row.medicalcentre_id,
           medicalcentre_name: row.medicalcentre_name,
+          logo: row.logo,
           address: {
             address_line: row.address_line,
             area: row.area,
