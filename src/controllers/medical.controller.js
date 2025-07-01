@@ -443,17 +443,20 @@ const getMedicalCentreSummary = expressAsyncHandler(async (req, res) => {
 });
 
 const getTests = expressAsyncHandler(async (req, res) => {
-  let { page = 1, limit = 10, type_of_test, search } = req.query;
-
-  page = parseInt(page);
-  limit = parseInt(limit);
-
-  if (page < 1 || limit < 1) {
-    return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
-  }
-
   try {
-    const offset = (page - 1) * limit;
+    let { page = 1, limit = 10, type_of_test, search, latitude, longitude, radius = 10 } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    radius = parseFloat(radius);
+
+    if (page < 1 || limit < 1) {
+      return sendError(res, constants.VALIDATION_ERROR, "Page and limit must be positive integers.");
+    }
+
+    if (!latitude || !longitude) {
+      return sendError(res, constants.VALIDATION_ERROR, "Latitude and longitude are required.");
+    }
 
     const filters = [];
     const params = [];
@@ -473,50 +476,49 @@ const getTests = expressAsyncHandler(async (req, res) => {
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
-    const fullQuery = `
-      WITH filtered_tests AS (
-        SELECT 
-          mt.medical_test_id,
-          mt.medicalcentre_id,
-          tc.test_id,
-          tc.test_name,
-          tc.type_of_test,
-          tc.components,
-          tc.special_requirements,
-          mt.price,
-          mt.created_at,
-          mc.medicalcentre_name
-        FROM medical_test AS mt
-        JOIN test_catalog AS tc ON mt.test_id = tc.test_id
-        JOIN medical_centre AS mc ON mt.medicalcentre_id = mc.medicalcentre_id
-        ${whereClause}
-      ),
-      total_count AS (
-        SELECT COUNT(*) AS count FROM filtered_tests
-      ),
-      paginated_tests AS (
-        SELECT * FROM filtered_tests
-        ORDER BY created_at DESC
-        LIMIT $${index} OFFSET $${index + 1}
-      )
+    const query = `
       SELECT 
-        (SELECT json_agg(paginated_tests) FROM paginated_tests) AS tests,
-        (SELECT count FROM total_count) AS count;
+        mt.medical_test_id,
+        mt.medicalcentre_id,
+        tc.test_id,
+        tc.test_name,
+        tc.type_of_test,
+        tc.components,
+        tc.special_requirements,
+        mt.price,
+        mt.created_at,
+        mc.medicalcentre_name,
+        mc.mclatitude,
+        mc.mclongitude
+      FROM medical_test mt
+      JOIN test_catalog tc ON mt.test_id = tc.test_id
+      JOIN medical_centre mc ON mt.medicalcentre_id = mc.medicalcentre_id
+      ${whereClause}
     `;
 
-    params.push(limit, offset);
+    const result = await pool.query(query, params);
 
-    const { rows } = await pool.query(fullQuery, params);
+    const allTests = result.rows
+      .filter(test => test.mclatitude && test.mclongitude)
+      .map(test => {
+        const distance = haversine(latitude, longitude, test.mclatitude, test.mclongitude);
+        return { ...test, distance };
+      })
+      .filter(test => test.distance <= radius)
+      .sort((a, b) => a.distance - b.distance);
 
-    const data = rows[0];
-    const totalItems = parseInt(data.count, 10);
-    const totalPages = Math.ceil(totalItems / limit);
+    const startIndex = (page - 1) * limit;
+    const paginatedData = allTests.slice(startIndex, startIndex + limit);
+
+    const randomValue = Math.floor(Math.random() * 4) + 1;
 
     return sendSuccess(res, constants.OK, "Tests fetched successfully.", {
-      totalItems,
-      totalPages,
+      tests: paginatedData,
+      totalCount: allTests.length,
+      totalPages: Math.ceil(allTests.length / limit),
       currentPage: page,
-      tests: data.tests || []
+      radiusKm: radius,
+      randomValue,
     });
 
   } catch (error) {
@@ -524,6 +526,7 @@ const getTests = expressAsyncHandler(async (req, res) => {
     return sendServerError(res, error);
   }
 });
+
 
 
 export default {
