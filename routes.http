@@ -1,5 +1,5 @@
 ### Send OTP to email
-POST http://localhost:3000/api/auth/sendotp
+POST http://localhost:3000/api/v1/auth/sendotp
 Content-Type: application/json
 
 {
