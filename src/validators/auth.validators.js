@@ -3,12 +3,12 @@ import Joi from "joi";
 export const signupSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
   lastName: Joi.string().min(2).max(50).required(),
-  phone: Joi.string().pattern(/^\+?[0-9]{7,15}$/).required()
+  phone: Joi.string().pattern(/^\+?[0-9]{7,15}$/).optional()
     .messages({
       "string.pattern.base": "Phone number must be a valid international format"
     }),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).max(128).required(),
+  password: Joi.string().min(6).max(128).optional(),
   gender: Joi.string().valid("Male", "Female", "Other").optional(),
   dob: Joi.date().iso().optional(),
   profilePic: Joi.string().uri().optional(),

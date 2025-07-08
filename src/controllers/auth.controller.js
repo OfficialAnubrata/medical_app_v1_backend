@@ -181,7 +181,6 @@ const signup = expressAsyncHandler(async (req, res) => {
   }
 });
 
-
 const login = expressAsyncHandler(async (req, res) => {
   let { email, password } = req.body;
 

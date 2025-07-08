@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100),
     phone VARCHAR(15) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT,
+    password TEXT,  -- no NOT NULL here
     gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
     dob DATE,
     profile_pic TEXT,
@@ -12,12 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
     location_longitude DOUBLE PRECISION,
     is_google_user BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     CHECK (
       (is_google_user = TRUE AND password IS NULL) OR
       (is_google_user = FALSE AND password IS NOT NULL)
     )
 );
+
 
 
 CREATE TABLE IF NOT EXISTS patients (
