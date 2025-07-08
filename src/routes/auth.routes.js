@@ -5,6 +5,7 @@ import { validateLogin, validateSignup } from "../validators/auth.validators.js"
 import { refreshAccessToken } from "../controllers/refresh.controller.js";
 
 router.post("/sendotp",authcontroller.sendotp);
+router.post("/verifyotp",authcontroller.verifyOtp);
 
 router.post("/login",validateLogin,authcontroller.login);
 

@@ -10,6 +10,7 @@ import {
 import { generateAuthToken, refresh_token } from "../utils/token.utils.js";
 import expressAsyncHandler from "express-async-handler";
 import logger from "../utils/logger.utils.js";
+import { sendEmail } from "../utils/sendEmail.utils.js";
 
 const sendotp = expressAsyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -62,7 +63,6 @@ const signup = expressAsyncHandler(async (req, res) => {
       location_latitude = null,
       location_longitude = null,
       isGoogleUser = false,
-      otp = null,
     } = req.body;
 
     // Normalize email
@@ -112,25 +112,6 @@ const signup = expressAsyncHandler(async (req, res) => {
       }
 
       return sendError(res, constants.CONFLICT, "User already exists with this email or phone.");
-    }
-
-    // OTP validation for non-Google user
-    if (!isGoogleUser) {
-      if (!otp) {
-        return sendError(res, constants.VALIDATION_ERROR, "OTP is required for signup.");
-      }
-
-      const { rows: otpRows } = await pool.query(
-        `SELECT * FROM email_otps WHERE email = $1 AND otp_code = $2 AND expires_at > NOW()`,
-        [email, otp]
-      );
-
-      if (otpRows.length === 0) {
-        return sendError(res, constants.UNAUTHORIZED, "Invalid or expired OTP.");
-      }
-
-      // Mark OTP as verified
-      await pool.query(`UPDATE email_otps SET verified = true WHERE email = $1`, [email]);
     }
 
     // Create new user
@@ -226,6 +207,33 @@ const login = expressAsyncHandler(async (req, res) => {
     return sendSuccess(res, constants.OK, "Login successful", { user, token });
   } catch (error) {
     logger.error(error.message);
+    return sendServerError(res, error);
+  }
+});
+
+const verifyOtp = expressAsyncHandler(async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return sendError(res, constants.VALIDATION_ERROR, "Email and OTP are required.");
+    }
+
+    const { rows: otpRows } = await pool.query(
+      `SELECT * FROM email_otps WHERE email = $1 AND otp_code = $2 AND expires_at > NOW() AND verified = false`,
+      [email.trim().toLowerCase(), otp]
+    );
+
+    if (otpRows.length === 0) {
+      return sendError(res, constants.UNAUTHORIZED, "Invalid or expired OTP.");
+    }
+
+    // Mark OTP as verified
+    await pool.query(`UPDATE email_otps SET verified = true WHERE email = $1`, [email.trim().toLowerCase()]);
+
+    return sendSuccess(res, constants.OK, "OTP verified successfully");
+  } catch (error) {
+    logger.error("OTP verification error:", error.message);
     return sendServerError(res, error);
   }
 });
@@ -413,4 +421,5 @@ export default {
   superadminsignup,
   superadminlogin,
   medicalCentreLogin,
+  verifyOtp
 };

@@ -326,3 +326,12 @@ Authorization: Bearer <your_superadmin_token>
 POST http://localhost:3000/api/v1/medical/fetchtests/user?page=1&limit=10&type_of_test=Blood&search=Count&latitude=22.5731358&longitude=88.4343624&radius=500
 Authorization: Bearer <your_user_token>
 Content-Type: application/json
+
+### Verify OTP
+POST http://localhost:3000/api/v1/auth/verifyotp
+Content-Type: application/json
+
+{
+  "email": "exampleuser@gmail.com",
+  "otp": "123456"
+}
