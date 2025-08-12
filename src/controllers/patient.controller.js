@@ -279,10 +279,146 @@ const addPrescription = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const editPatient = expressAsyncHandler(async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    // 1. Validate request body
+    const { error, value } = patientSchema.validate(req.body, { allowUnknown: true });
+    if (error) {
+      return sendError(res, constants.VALIDATION_ERROR, error.details[0].message);
+    }
+
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return sendError(res, constants.UNAUTHORIZED, "User not authenticated");
+    }
+
+    const { patient_id } = req.params;
+    if (!patient_id) {
+      return sendError(res, constants.VALIDATION_ERROR, "Patient ID is required");
+    }
+
+    const { full_name, gender, dob, relation } = value;
+    const prescription = req.file;
+
+    await client.query("BEGIN");
+
+    // 2. Check if patient exists and belongs to the user
+    const existingPatient = await client.query(
+      `SELECT 1 FROM patients WHERE patient_id = $1 AND user_id = $2`,
+      [patient_id, user_id]
+    );
+    if (existingPatient.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return sendError(res, constants.NOT_FOUND, "Patient not found or unauthorized");
+    }
+
+    // 3. Build dynamic patient update query
+    const updateFields = [];
+    const updateValues = [];
+    let idx = 1;
+
+    if (full_name !== undefined) {
+      updateFields.push(`full_name = $${idx++}`);
+      updateValues.push(full_name.trim());
+    }
+    if (gender !== undefined) {
+      updateFields.push(`gender = $${idx++}`);
+      updateValues.push(gender);
+    }
+    if (dob !== undefined) {
+      updateFields.push(`dob = $${idx++}`);
+      updateValues.push(dob);
+    }
+    if (relation !== undefined) {
+      updateFields.push(`relation = $${idx++}`);
+      updateValues.push(relation.trim());
+    }
+
+    if (updateFields.length > 0) {
+      updateValues.push(patient_id, user_id);
+      await client.query(
+        `UPDATE patients 
+         SET ${updateFields.join(", ")} 
+         WHERE patient_id = $${idx++} AND user_id = $${idx}`,
+        updateValues
+      );
+    }
+
+    // 4. Handle prescription update
+    if (prescription) {
+      const { success, url, error: uploadError } = await uploadToCloudinary(prescription.path, "prescriptions");
+      if (!success) {
+        await client.query("ROLLBACK");
+        return sendError(res, constants.INTERNAL_SERVER_ERROR, `Cloudinary upload failed: ${uploadError}`);
+      }
+
+      const existingPrescription = await client.query(
+        `SELECT prescription_id FROM prescriptions WHERE patient_id = $1`,
+        [patient_id]
+      );
+
+      if (existingPrescription.rows.length > 0) {
+        await client.query(
+          `UPDATE prescriptions 
+           SET prescription_file = $1, prescription_date = CURRENT_DATE 
+           WHERE patient_id = $2`,
+          [url, patient_id]
+        );
+      } else {
+        const prescription_id = uuidv4();
+        await client.query(
+          `INSERT INTO prescriptions (prescription_id, patient_id, prescription_file) 
+           VALUES ($1, $2, $3)`,
+          [prescription_id, patient_id, url]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+
+    // 5. Fetch updated patient with prescriptions
+    const updatedPatientQuery = `
+      SELECT 
+        p.patient_id,
+        p.full_name,
+        p.gender,
+        p.dob,
+        p.relation,
+        p.created_at,
+        COALESCE(
+          JSON_AGG(JSONB_BUILD_OBJECT(
+            'prescription_id', pr.prescription_id,
+            'prescription_file', pr.prescription_file,
+            'prescription_date', pr.prescription_date,
+            'created_at', pr.created_at
+          )) FILTER (WHERE pr.prescription_id IS NOT NULL), '[]'
+        ) AS prescriptions
+      FROM patients p
+      LEFT JOIN prescriptions pr ON p.patient_id = pr.patient_id
+      WHERE p.patient_id = $1
+      GROUP BY p.patient_id;
+    `;
+
+    const { rows } = await pool.query(updatedPatientQuery, [patient_id]);
+
+    return sendSuccess(res, constants.OK, "Patient updated successfully", rows[0]);
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    logger.error("Edit Patient Error:", error.message);
+    return sendServerError(res, error);
+  } finally {
+    client.release();
+  }
+});
+
 export default {
     addAddress,
     addPatient,
     getAllPatients,
     getAllAddresses,
-    addPrescription
+    addPrescription,
+    editPatient
 };
