@@ -414,6 +414,75 @@ const medicalCentreLogin = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const userdetails = expressAsyncHandler(async (req, res) => {
+  try {
+    const userId = req.user.user_id; // Assuming user_id is set in req.user by auth middleware
+    if (!userId) {
+      return sendError(res, constants.UNAUTHORIZED, "User not authenticated");
+    }
+    const query = `
+      SELECT 
+          u.user_id,
+          u.first_name,
+          u.last_name,
+          u.phone,
+          u.email,
+          u.gender,
+          u.dob,
+          u.profile_pic,
+          u.location_latitude,
+          u.location_longitude,
+          u.is_google_user,
+          u.created_at,
+          COALESCE(
+              JSON_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                  'patient_id', p.patient_id,
+                  'full_name', p.full_name,
+                  'gender', p.gender,
+                  'dob', p.dob,
+                  'relation', p.relation,
+                  'created_at', p.created_at
+              )) FILTER (WHERE p.patient_id IS NOT NULL), '[]'
+          ) AS patients,
+          COALESCE(
+              JSON_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                  'address_id', a.address_id,
+                  'label', a.label,
+                  'address_line', a.address_line,
+                  'area', a.area,
+                  'city', a.city,
+                  'district', a.district,
+                  'state', a.state,
+                  'pincode', a.pincode,
+                  'landmark', a.landmark,
+                  'contact_number', a.contact_number,
+                  'latitude', a.latitude,
+                  'longitude', a.longitude,
+                  'created_at', a.created_at
+              )) FILTER (WHERE a.address_id IS NOT NULL), '[]'
+          ) AS addresses
+      FROM users u
+      LEFT JOIN patients p ON u.user_id = p.user_id
+      LEFT JOIN addresses a ON u.user_id = a.user_id
+      WHERE u.user_id = $1
+      GROUP BY u.user_id;
+    `;
+    const { rows } = await pool.query(query, [userId]);
+
+    if (rows.length === 0) {
+      return sendError(res, constants.NOT_FOUND, "User not found");
+    }
+    const user = rows[0];
+
+    return sendSuccess(res, constants.OK, "User details fetched successfully", user);
+
+
+  } catch (error) {
+    logger.error("Error fetching user details:", error.message);
+    return sendServerError(res, error);
+  }
+});
+
 export default {
   sendotp,
   signup,
@@ -421,5 +490,6 @@ export default {
   superadminsignup,
   superadminlogin,
   medicalCentreLogin,
-  verifyOtp
+  verifyOtp,
+  userdetails,
 };

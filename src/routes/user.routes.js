@@ -6,6 +6,7 @@ import {
 import patientController from "../controllers/patient.controller.js";
 import bookingController from "../controllers/booking.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import authController from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.post('/allorders',userChecker,bookingController.allordersuser)
 router.post('/bookingdetails/:booking_id',userChecker,bookingController.getBookingById);
 router.post('/addprescription/:patient_id',userChecker,upload.single('prescription'),patientController.addPrescription)
 router.post("/distance",userChecker,bookingController.distancebetweenpoints)
+router.post('/userdetails', userChecker, authController.userdetails);
 
 export default router;
