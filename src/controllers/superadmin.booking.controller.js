@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import logger from "../utils/logger.utils.js";
 import constants from "../config/constants.config.js";
 import pool from "../config/db.config.js";
+import { uploadToCloudinary } from "../utils/cloudnary.utils.js";
 
 
 const allorderfromsuperadmin = expressAsyncHandler(async (req, res) => {
@@ -84,11 +85,14 @@ const allorderfromsuperadmin = expressAsyncHandler(async (req, res) => {
 
 
 const changeteststatusbysuperadmin = expressAsyncHandler(async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const { item_id, status } = req.body;
         const { booking_id } = req.params;
+        const reportFile = req.file; // field: report_file
 
-        // Validate input
+        // 1. Validation
         if (!item_id || !status || !booking_id) {
             return sendError(res, constants.VALIDATION_ERROR, "item_id, status, and booking_id are required.");
         }
@@ -101,29 +105,77 @@ const changeteststatusbysuperadmin = expressAsyncHandler(async (req, res) => {
             'report delivery',
             'Cancelled'
         ];
-
         if (!allowedStatuses.includes(status)) {
             return sendError(res, constants.VALIDATION_ERROR, "Invalid status value.");
         }
 
-        // Perform update and check rowCount (single query)
-        const { rowCount } = await pool.query(
-            `UPDATE test_booking_items
-             SET status = $1
-             WHERE item_id = $2 AND booking_id = $3`,
-            [status, item_id, booking_id]
-        );
+        await client.query("BEGIN");
 
-        if (rowCount === 0) {
+        // 2. Check if test item exists
+        const existingItem = await client.query(
+            `SELECT 1 FROM test_booking_items WHERE item_id = $1 AND booking_id = $2`,
+            [item_id, booking_id]
+        );
+        if (existingItem.rows.length === 0) {
+            await client.query("ROLLBACK");
             return sendError(res, constants.NOT_FOUND, "Test item not found or does not belong to the booking.");
         }
 
-        return sendSuccess(res, constants.OK, "Test status updated successfully.");
+        // 3. Build dynamic update
+        const updateFields = ["status = $1"];
+        const updateValues = [status];
+        let idx = 2;
+        let reportLink = null;
+
+        // 4. Handle report upload
+        if (reportFile) {
+            const { success, url, error: uploadError } = await uploadToCloudinary(reportFile.path, "test_reports");
+            if (!success) {
+                await client.query("ROLLBACK");
+                return sendError(res, constants.INTERNAL_SERVER_ERROR, `Cloudinary upload failed: ${uploadError}`);
+            }
+            reportLink = url;
+            updateFields.push(`report_link = $${idx++}`);
+            updateValues.push(reportLink);
+        }
+
+        updateValues.push(item_id, booking_id);
+
+        await client.query(
+            `UPDATE test_booking_items
+             SET ${updateFields.join(", ")}
+             WHERE item_id = $${idx++} AND booking_id = $${idx}`,
+            updateValues
+        );
+
+        await client.query("COMMIT");
+
+        // 5. Fetch updated record
+        const updatedItemQuery = `
+            SELECT 
+                item_id,
+                booking_id,
+                medical_test_id,
+                test_price,
+                report_link,
+                status,
+                created_at
+            FROM test_booking_items
+            WHERE item_id = $1 AND booking_id = $2
+        `;
+        const { rows } = await pool.query(updatedItemQuery, [item_id, booking_id]);
+
+        return sendSuccess(res, constants.OK, "Test status updated successfully", rows[0]);
+
     } catch (error) {
+        await client.query("ROLLBACK");
         logger.error("Error changing test status by superadmin:", error.message);
         return sendServerError(res, error);
+    } finally {
+        client.release();
     }
 });
+
 
 
 export default{ allorderfromsuperadmin, changeteststatusbysuperadmin };
