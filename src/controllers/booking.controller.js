@@ -472,10 +472,62 @@ const distancebetweenpoints = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const userReportFetch = expressAsyncHandler(async (req, res) => {
+  try {
+    // user_id from token
+    const user_id = req.user?.user_id;
+
+    if (!user_id) {
+      return sendError(res, constants.UNAUTHORIZED, "Unauthorized: user_id missing in token.");
+    }
+
+    const query = `
+      SELECT 
+        tbi.item_id,
+        tc.test_name,
+        tc.type_of_test,
+        tbi.test_price,
+        tbi.status AS test_status,
+        tbi.report_link,
+        mc.medicalcentre_name
+      FROM test_booking_items tbi
+      JOIN test_bookings tb 
+        ON tbi.booking_id = tb.booking_id
+      JOIN medical_test mt 
+        ON tbi.medical_test_id = mt.medical_test_id
+      JOIN test_catalog tc 
+        ON mt.test_id = tc.test_id
+      JOIN medical_centre mc 
+        ON mt.medicalcentre_id = mc.medicalcentre_id
+      WHERE tb.user_id = $1
+        AND tbi.status IN ('report generated', 'report delivery')
+      ORDER BY tbi.created_at DESC
+    `;
+
+    const { rows } = await pool.query(query, [user_id]);
+
+    if (!rows || rows.length === 0) {
+      return sendError(res, constants.NOT_FOUND, "No reports found for this user.");
+    }
+
+    return sendSuccess(
+      res,
+      constants.OK,
+      "User reports fetched successfully.",
+      rows
+    );
+  } catch (error) {
+    logger.error("Error fetching user reports:", error.message);
+    return sendServerError(res, error);
+  }
+});
+
+
 export default {
     createBooking,
     getTestSummary,
     allordersuser,
     getBookingById,
-    distancebetweenpoints
+    distancebetweenpoints,
+    userReportFetch
 }

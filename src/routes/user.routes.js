@@ -22,5 +22,6 @@ router.post('/addprescription/:patient_id',userChecker,upload.single('prescripti
 router.post("/distance",userChecker,bookingController.distancebetweenpoints)
 router.post('/userdetails', userChecker, authController.userdetails);
 router.post('/editpatient/:patient_id', userChecker,  upload.single("prescription"),  patientController.editPatient);
+router.post('/userreport', userChecker, bookingController.userReportFetch);
 
 export default router;
