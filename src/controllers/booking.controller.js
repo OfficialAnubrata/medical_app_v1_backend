@@ -514,17 +514,17 @@ const userReportFetch = expressAsyncHandler(async (req, res) => {
         tbi.test_price,
         tbi.status AS test_status,
         tbi.report_link,
-        mc.medicalcentre_name
+        mc.medicalcentre_name,
+        tbi.created_at
       FROM test_booking_items tbi
       JOIN test_bookings tb 
-        ON tbi.booking_id = tb.booking_id
+        ON tbi.booking_id = tb.booking_id AND tb.user_id = $1
       JOIN medical_test mt 
         ON tbi.medical_test_id = mt.medical_test_id
       JOIN test_catalog tc 
         ON mt.test_id = tc.test_id
       JOIN medical_centre mc 
         ON mt.medicalcentre_id = mc.medicalcentre_id
-      WHERE tb.user_id = $1
     `;
 
     const params = [user_id];
