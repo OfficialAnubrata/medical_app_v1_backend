@@ -507,7 +507,7 @@ const userReportFetch = expressAsyncHandler(async (req, res) => {
     const { rows } = await pool.query(query, [user_id]);
 
     if (!rows || rows.length === 0) {
-      return sendError(res, constants.NOT_FOUND, "No reports found for this user.");
+      return sendSuccess(res, constants.OK, "No reports found for this user.",[]);
     }
 
     return sendSuccess(
