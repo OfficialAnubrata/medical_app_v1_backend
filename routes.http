@@ -340,3 +340,20 @@ Content-Type: application/json
 POST http://localhost:3000/api/v1/medical/fetchthreeRandomtests/user
 Authorization: Bearer <your_user_token>
 Content-Type: application/json
+
+
+### show any type of user report
+POST http://localhost:3000/api/v1/user/userreport
+Authorization: Bearer <your_user_token>
+Content-Type: application/json
+
+{
+    "status": [
+      "sample collection due",
+      "sample collected",
+      "sample processing",
+      "report generated",
+      "report delivery",
+      "Cancelled"
+    ]
+}

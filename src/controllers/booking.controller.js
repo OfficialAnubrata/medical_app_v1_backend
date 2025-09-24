@@ -1,8 +1,8 @@
 import expressAsyncHandler from "express-async-handler";
 import {
-    sendError,
-    sendServerError,
-    sendSuccess,
+  sendError,
+  sendServerError,
+  sendSuccess,
 } from "../utils/response.utils.js";
 import { v4 as uuidv4 } from "uuid";
 import logger from "../utils/logger.utils.js";
@@ -11,82 +11,82 @@ import pool from "../config/db.config.js";
 import { getRoadDistance } from "../utils/road.distance.utils.js";
 
 const createBooking = expressAsyncHandler(async (req, res) => {
-    const client = await pool.connect();
-    try {
-        const user_id = req.user?.user_id;
-        const {
-            patient_id,
-            address_id,
-            scheduled_date,
-            payment_mode,
-            transaction_id,
-            tests // array of { medical_test_id }
-        } = req.body;
+  const client = await pool.connect();
+  try {
+    const user_id = req.user?.user_id;
+    const {
+      patient_id,
+      address_id,
+      scheduled_date,
+      payment_mode,
+      transaction_id,
+      tests // array of { medical_test_id }
+    } = req.body;
 
-        if (!tests || !Array.isArray(tests) || tests.length === 0) {
-            return sendError(res, constants.VALIDATION_ERROR, "Please provide a valid array of tests.");
-        }
+    if (!tests || !Array.isArray(tests) || tests.length === 0) {
+      return sendError(res, constants.VALIDATION_ERROR, "Please provide a valid array of tests.");
+    }
 
-        const medicalTestIds = tests.map(test => test.medical_test_id);
+    const medicalTestIds = tests.map(test => test.medical_test_id);
 
-        // Fetch all prices in a single query
-        const priceResult = await client.query(
-            `SELECT medical_test_id, price FROM medical_test WHERE medical_test_id = ANY($1)`,
-            [medicalTestIds]
-        );
+    // Fetch all prices in a single query
+    const priceResult = await client.query(
+      `SELECT medical_test_id, price FROM medical_test WHERE medical_test_id = ANY($1)`,
+      [medicalTestIds]
+    );
 
-        const priceMap = new Map(priceResult.rows.map(row => [row.medical_test_id, row.price]));
+    const priceMap = new Map(priceResult.rows.map(row => [row.medical_test_id, row.price]));
 
-        // Ensure all tests exist
-        const missingTests = medicalTestIds.filter(id => !priceMap.has(id));
-        if (missingTests.length > 0) {
-            return sendError(res, constants.NOT_FOUND, `Invalid test IDs: ${missingTests.join(", ")}`);
-        }
+    // Ensure all tests exist
+    const missingTests = medicalTestIds.filter(id => !priceMap.has(id));
+    if (missingTests.length > 0) {
+      return sendError(res, constants.NOT_FOUND, `Invalid test IDs: ${missingTests.join(", ")}`);
+    }
 
-        await client.query('BEGIN');
-        const booking_id = uuidv4();
+    await client.query('BEGIN');
+    const booking_id = uuidv4();
 
-        // Insert booking
-        await client.query(`
+    // Insert booking
+    await client.query(`
             INSERT INTO test_bookings (
                 booking_id, user_id, patient_id, address_id,
                 scheduled_date, payment_mode, transaction_id
             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [
-            booking_id, user_id, patient_id, address_id,
-            scheduled_date, payment_mode, transaction_id
-        ]);
+      booking_id, user_id, patient_id, address_id,
+      scheduled_date, payment_mode, transaction_id
+    ]);
 
-        // Prepare bulk insert for test_booking_items
-        const insertValues = [];
-        const insertParams = [];
-        let paramIndex = 1;
+    // Prepare bulk insert for test_booking_items
+    const insertValues = [];
+    const insertParams = [];
+    let paramIndex = 1;
 
-        for (const test of tests) {
-            const item_id = uuidv4();
-            const test_price = priceMap.get(test.medical_test_id);
-            insertValues.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-            insertParams.push(item_id, booking_id, test.medical_test_id, test_price);
-        }
+    for (const test of tests) {
+      const item_id = uuidv4();
+      const test_price = priceMap.get(test.medical_test_id);
+      insertValues.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+      insertParams.push(item_id, booking_id, test.medical_test_id, test_price);
+    }
 
-        const insertQuery = `
+    const insertQuery = `
             INSERT INTO test_booking_items (
                 item_id, booking_id, medical_test_id, test_price
             ) VALUES ${insertValues.join(", ")}
         `;
 
-        await client.query(insertQuery, insertParams);
+    await client.query(insertQuery, insertParams);
 
-        await client.query('COMMIT');
+    await client.query('COMMIT');
 
-        return sendSuccess(res, constants.CREATED, "Booking created successfully", { booking_id });
-    } catch (error) {
-        logger.error("Error creating booking:", error.message);
-        await client.query("ROLLBACK");
-        return sendServerError(res, error);
-    } finally {
-        client.release();
-    }
+    return sendSuccess(res, constants.CREATED, "Booking created successfully", { booking_id });
+  } catch (error) {
+    logger.error("Error creating booking:", error.message);
+    await client.query("ROLLBACK");
+    return sendServerError(res, error);
+  } finally {
+    client.release();
+  }
 });
 
 const getTestSummary = expressAsyncHandler(async (req, res) => {
@@ -163,7 +163,7 @@ const getTestSummary = expressAsyncHandler(async (req, res) => {
     });
 
   } catch (error) {
-       logger.error("Error creating booking:", error.message);
+    logger.error("Error creating booking:", error.message);
     return sendServerError(res, error);
   }
 });
@@ -283,7 +283,7 @@ const allordersuser = expressAsyncHandler(async (req, res) => {
       total_amount: parseFloat(row.total_amount),
       total_tests: parseInt(row.total_tests),
       created_at: row.created_at,
-      
+
       patient: {
         patient_id: row.patient_id,
         name: row.patient_name,
@@ -291,7 +291,7 @@ const allordersuser = expressAsyncHandler(async (req, res) => {
         dob: row.patient_dob,
         relation: row.patient_relation
       },
-      
+
       address: row.address_id ? {
         address_id: row.address_id,
         label: row.address_label,
@@ -304,7 +304,7 @@ const allordersuser = expressAsyncHandler(async (req, res) => {
         landmark: row.landmark,
         contact_number: row.contact_number
       } : null,
-      
+
       tests: row.booking_items || []
     }));
 
@@ -481,7 +481,32 @@ const userReportFetch = expressAsyncHandler(async (req, res) => {
       return sendError(res, constants.UNAUTHORIZED, "Unauthorized: user_id missing in token.");
     }
 
-    const query = `
+    // Allowed statuses (from CHECK constraint)
+    const allowedStatuses = [
+      "sample collection due",
+      "sample collected",
+      "sample processing",
+      "report generated",
+      "report delivery",
+      "Cancelled",
+    ];
+
+    // status array from body
+    const { status = [] } = req.body;
+
+    // Validate input statuses
+    if (Array.isArray(status) && status.length > 0) {
+      const invalidStatuses = status.filter(s => !allowedStatuses.includes(s));
+      if (invalidStatuses.length > 0) {
+        return sendError(
+          res,
+          constants.VALIDATION_ERROR,
+          `Invalid status values: ${invalidStatuses.join(", ")}`
+        );
+      }
+    }
+
+    let query = `
       SELECT 
         tbi.item_id,
         tc.test_name,
@@ -500,22 +525,27 @@ const userReportFetch = expressAsyncHandler(async (req, res) => {
       JOIN medical_centre mc 
         ON mt.medicalcentre_id = mc.medicalcentre_id
       WHERE tb.user_id = $1
-        AND tbi.status IN ('report generated', 'report delivery')
-      ORDER BY tbi.created_at DESC
     `;
 
-    const { rows } = await pool.query(query, [user_id]);
+    const params = [user_id];
 
-    if (!rows || rows.length === 0) {
-      return sendSuccess(res, constants.OK, "No reports found for this user.",[]);
+    if (Array.isArray(status) && status.length > 0) {
+      // dynamically build placeholders ($2, $3, …)
+      const placeholders = status.map((_, idx) => `$${idx + 2}`).join(",");
+      query += ` AND tbi.status IN (${placeholders})`;
+      params.push(...status);
     }
 
-    return sendSuccess(
-      res,
-      constants.OK,
-      "User reports fetched successfully.",
-      rows
-    );
+    query += ` ORDER BY tbi.created_at DESC`;
+
+    const { rows } = await pool.query(query, params);
+
+    if (!rows || rows.length === 0) {
+      return sendSuccess(res, constants.OK, "No reports found for this user.", []);
+    }
+
+    return sendSuccess(res, constants.OK, "User reports fetched successfully.", rows);
+
   } catch (error) {
     logger.error("Error fetching user reports:", error.message);
     return sendServerError(res, error);
@@ -523,11 +553,12 @@ const userReportFetch = expressAsyncHandler(async (req, res) => {
 });
 
 
+
 export default {
-    createBooking,
-    getTestSummary,
-    allordersuser,
-    getBookingById,
-    distancebetweenpoints,
-    userReportFetch
+  createBooking,
+  getTestSummary,
+  allordersuser,
+  getBookingById,
+  distancebetweenpoints,
+  userReportFetch
 }
