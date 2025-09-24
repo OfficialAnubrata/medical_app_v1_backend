@@ -335,3 +335,8 @@ Content-Type: application/json
   "email": "exampleuser@gmail.com",
   "otp": "123456"
 }
+
+### random 3 tests for user
+POST http://localhost:3000/api/v1/medical/fetchthreeRandomtests/user
+Authorization: Bearer <your_user_token>
+Content-Type: application/json

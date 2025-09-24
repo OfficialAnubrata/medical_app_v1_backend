@@ -105,4 +105,6 @@ router.post(
 router.post("/fetchtesttypes", userChecker, testController.fetchtesttypes);
 
 router.post("/fetchtests/user", userChecker, medicalController.getTests);
+
+router.post("/fetchthreeRandomtests/user", userChecker, medicalController.getThreeRandomTests);
 export default router;

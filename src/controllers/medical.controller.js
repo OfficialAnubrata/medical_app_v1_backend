@@ -527,6 +527,46 @@ const getTests = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const getThreeRandomTests = expressAsyncHandler(async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        mt.medical_test_id,
+        mt.medicalcentre_id,
+        tc.test_id,
+        tc.test_name,
+        tc.type_of_test,
+        tc.components,
+        tc.special_requirements,
+        mt.price,
+        mt.created_at,
+        mc.medicalcentre_name
+      FROM medical_test mt
+      JOIN test_catalog tc ON mt.test_id = tc.test_id
+      JOIN medical_centre mc ON mt.medicalcentre_id = mc.medicalcentre_id
+      ORDER BY RANDOM()
+      LIMIT 3
+    `;
+
+    const result = await pool.query(query);
+
+  const tests = result.rows.map(test => {
+    const discount = Math.floor(Math.random() * (30 - 10 + 1)) + 10; // random 10–30%
+    return {
+      ...test,
+      original_price: Math.round(test.price / (1 - discount / 100)),
+      discount
+    };
+  });
+
+
+    return sendSuccess(res, constants.OK, "Three random tests fetched successfully.", tests);
+
+  } catch (error) {
+    logger.info(error.message);
+    return sendServerError(res, error);
+  }
+});
 
 
 export default {
@@ -537,5 +577,6 @@ export default {
   deleteMedicalCentre,
   getMedicalCentreSummary,
   editMedicalCentre,
-  getTests
+  getTests,
+  getThreeRandomTests
 };
