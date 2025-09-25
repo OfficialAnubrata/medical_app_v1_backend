@@ -16,7 +16,8 @@ const uploadToCloudinary = async (filePath, folderName) => {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
       folder: folderName,
-      resource_type: "raw" // For PDFs and other non-image files
+      resource_type: "raw", // For PDFs and other non-image files
+      access_mode: "public" // 👈 ensures it's accessible via direct link
     });
     return { success: true, url: result.secure_url };
   } catch (error) {
